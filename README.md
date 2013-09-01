@@ -13,6 +13,8 @@ Linux
 
 > python2 acehttp.py
 
+* Run any stream with http://localhost:8000/pid/ace-id-goes-here
+
 Windows
 -------
 * Install [Python 2](http://python.org/download/), [gevent](https://pypi.python.org/pypi/gevent#downloads) an [greenlet](https://pypi.python.org/pypi/greenlet#downloads)
@@ -23,3 +25,4 @@ Windows
 or download ZIP of it.
 
 * Start python.exe \path\to\acehttp.py
+* Run any stream with http://localhost:8000/pid/ace-id-goes-here
