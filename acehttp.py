@@ -129,7 +129,7 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     logger.debug("Got url " + self.url)
     try:
       self.video = urllib2.urlopen(self.url)
-    except URLError as e:
+    except urllib2.URLError as e:
       logger.error("Error from URLLIB: " + str(e))
       self.die_with_error()
       return
