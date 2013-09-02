@@ -56,6 +56,7 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     logging.warning("Dying with error")
     self.send_error(500)
     self.end_headers()
+    self.wfile.close()
     
   def proxy_read(self):
     '''
@@ -152,6 +153,7 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       self.send_response(200)
       self.send_header("Content-Type", "video/mpeg")
       self.send_header("Accept-Ranges", "bytes")
+      self.send_header("Connection", "Close")
       self.end_headers()
       logger.debug("headers sent")
       
