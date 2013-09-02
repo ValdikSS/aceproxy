@@ -88,6 +88,8 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     while True:
       try:
 	if not self.proxyreadgreenlet.ready():
+	  if Ace.httpobey:
+	    self.ace.getPlayEvent()
 	  self.wfile.write(self.buffer.get())
 	else:
 	  # proxy_read is dead
