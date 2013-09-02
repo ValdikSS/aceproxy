@@ -51,7 +51,7 @@ class AceClient:
     
     
     # Logging init
-    logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s %(message)s', datefmt='%d.%m.%Y %H:%M:%S', level=self._debug)
+    logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', datefmt='%d.%m.%Y %H:%M:%S', level=self._debug)
     logger = logging.getLogger('AceClient_init')
     
     try:
@@ -69,14 +69,16 @@ class AceClient:
     
     
   def destroy(self):
+    logger = logging.getLogger("ace_destroy")
+    self._resumeevent.set()
+    self._urlresult.set()
     if self._shuttingDown.isSet():
       # Already in the middle of destroying
       return
     if self._socket:
       try:
-	logging.debug("Destroying client...")
+	logger.debug("Destroying client...")
 	self._write(AceMessage.request.SHUTDOWN)
-	self._resumeevent.set()
 	self._shuttingDown.set()
       except:
 	# Ignore exceptions on destroy
@@ -113,7 +115,11 @@ class AceClient:
   
   
   def getUrl(self):
-    return self._urlresult.get()
+    res = self._urlresult.get()
+    if res:
+      return res
+    else:
+      return False
   
   
   def getPlayEvent(self):
@@ -128,6 +134,7 @@ class AceClient:
       gevent.sleep()
       if self._shuttingDown.isSet():
 	logger.debug("Shutting down is in the process, returning from _recvData...")
+	self._socket.close()
 	return
       
       try:
