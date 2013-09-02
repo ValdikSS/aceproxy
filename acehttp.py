@@ -37,6 +37,8 @@ class Ace:
   httphost = '0.0.0.0'
   # HTTP port
   httpport = 8000
+  # Stream start delay for dumb players (in seconds)
+  httpdelay = 2
   # HTTP debug level
   httpdebug = logging.DEBUG
     
@@ -117,7 +119,7 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       self.send_header("Content-Type", "video/mpeg")
       self.send_header("Accept-Ranges", "bytes")
       self.end_headers()
-      gevent.sleep()
+      gevent.sleep(Ace.httpdelay)
 	
     except aceclient.AceException as e:
       logger.error("ACE Exception while creating new instance of ace! " + str(e))
