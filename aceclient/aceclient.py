@@ -9,6 +9,7 @@ from gevent.event import AsyncResult
 from gevent.event import Event
 import greenlet
 
+
 class AceException(Exception):
   '''
   Exception from AceClient
@@ -17,6 +18,7 @@ class AceException(Exception):
     self.val = val
   def __str__(self):
     return repr(self.val)
+
 
 class AceClient:
   def __init__(self, host, port, connect_timeout = 5, debug = logging.ERROR):
@@ -43,7 +45,9 @@ class AceClient:
     # Result (Created with AsyncResult() on call)
     self._result = AsyncResult()
     self._authevent = Event()
+    # Result for getURL()
     self._urlresult = AsyncResult()
+    self._resumeevent = Event()
     
     # Logging init
     logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s %(message)s', datefmt='%d.%m.%Y %H:%M:%S', level=self._debug)
@@ -58,8 +62,10 @@ class AceClient:
     gevent.spawn(self._recvData)
     gevent.sleep()
     
+    
   def __del__(self):
     self.destroy()
+    
     
   def destroy(self):
     if self._shuttingDown.isSet():
@@ -79,6 +85,7 @@ class AceClient:
 	self._socket.write(message + "\r\n")
       except EOFError as e:
 	raise AceException("Write error! " + str(e))
+    
     
   def aceInit(self, gender = AceConst.SEX_MALE, age = AceConst.GENDER_18_24, product_key = None):
     self._product_key = product_key
@@ -101,8 +108,15 @@ class AceClient:
       raise AceException("START error!")
     return
   
+  
   def getUrl(self):
     return self._urlresult.get()
+  
+  
+  def getPlayEvent(self):
+    self._resumeevent.wait()
+    return
+    
     
   def _recvData(self):
     logger = logging.getLogger('AceClient_recvdata')
@@ -143,6 +157,7 @@ class AceClient:
 	try:
 	  self._url = self._recvbuffer.split()[1]
 	  self._urlresult.set(self._url)
+	  self._resumeevent.set()
 	except IndexError as e:
 	  self._url = None
 	
@@ -178,3 +193,11 @@ class AceClient:
 	  self._result.set(False)
 	if self._status == 'main:starting':
 	  self._result.set(True)
+	  
+      elif self._recvbuffer.startswith(AceMessage.response.PAUSE):
+	logger.debug("PAUSE event")
+	self._resumeevent.clear()
+	
+      elif self._recvbuffer.startswith(AceMessage.response.RESUME):
+	logger.debug("RESUME event")
+	self._resumeevent.set()

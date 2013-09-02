@@ -20,8 +20,9 @@ class Ace:
   acekey = ''
   # Ace Stream host
   acehost = '127.0.0.1'
-  # Ace Stream port
+  # Ace Stream port (autodetect for Windows)
   aceport = 62062
+  
   if platform.system() == 'Windows':
     import _winreg
     import os.path
@@ -40,7 +41,9 @@ class Ace:
   # Stream start delay for dumb players (in seconds)
   httpdelay = 3
   # Stream queue size (1 = 4KB)
-  httpqueuelen = 100
+  httpqueuelen = 10
+  # Obey PAUSE and RESUME commands (should prevent annoying buffering)
+  httpobey = True
   # HTTP debug level
   httpdebug = logging.DEBUG
     
@@ -63,6 +66,8 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     '''
     while True:
       try:
+	if Ace.httpobey:
+	  self.ace.getPlayEvent()
 	data = self.video.read(4*1024)
 	if not data:
 	  #self.ace.destroy()
@@ -72,6 +77,7 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       except:
 	# Connection dropped
 	#self.ace.destroy()
+	print "exception from read"
 	return
       
     
