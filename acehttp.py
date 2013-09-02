@@ -39,7 +39,7 @@ class Ace:
   # HTTP port
   httpport = 8000
   # Stream start delay for dumb players (in seconds)
-  httpdelay = 3
+  httpdelay = 1
   # Stream queue size (1 = 4KB)
   httpqueuelen = 10
   # Obey PAUSE and RESUME commands (should prevent annoying buffering)
