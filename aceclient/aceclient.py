@@ -49,6 +49,7 @@ class AceClient:
     self._urlresult = AsyncResult()
     self._resumeevent = Event()
     
+    
     # Logging init
     logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s %(message)s', datefmt='%d.%m.%Y %H:%M:%S', level=self._debug)
     logger = logging.getLogger('AceClient_init')
@@ -75,6 +76,7 @@ class AceClient:
       try:
 	logging.debug("Destroying client...")
 	self._write(AceMessage.request.SHUTDOWN)
+	self._resumeevent.set()
 	self._shuttingDown.set()
       except:
 	# Ignore exceptions on destroy
