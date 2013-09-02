@@ -129,3 +129,5 @@ class AceMessage:
     GETUSERDATA =	'EVENT getuserdata'
     STATE =		'STATE'
     STATUS =		'STATUS'
+    PAUSE =		'PAUSE'
+    RESUME =		'RESUME'
