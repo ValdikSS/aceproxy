@@ -143,7 +143,7 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       
       try:
 	self.ace.START(self.path.split('/')[2])
-      except AceException:
+      except aceclient.AceException:
 	self.die_with_error()
 	return
       
