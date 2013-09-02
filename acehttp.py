@@ -39,11 +39,13 @@ class Ace:
   # HTTP port
   httpport = 8000
   # Stream start delay for dumb players (in seconds)
-  httpdelay = 1
+  httpdelay = 2
   # Stream queue size (1 = 4KB)
   httpqueuelen = 10
   # Obey PAUSE and RESUME commands (should prevent annoying buffering)
   httpobey = True
+  # Stream send delay on PAUSE/RESUME commads (works only if option above is enabled)
+  httppausedelay = 3
   # HTTP debug level
   httpdebug = logging.DEBUG
     
@@ -134,7 +136,7 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     try:
       self.ace = aceclient.AceClient(Ace.acehost, Ace.aceport, debug=Ace.debug)
       logger.debug("Ace created")
-      self.ace.aceInit(product_key = Ace.acekey)
+      self.ace.aceInit(product_key = Ace.acekey, pause_delay = Ace.httppausedelay)
       logger.debug("Ace inited")
       
       self.hanggreenlet = gevent.spawn(self.hangdetector)

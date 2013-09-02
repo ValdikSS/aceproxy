@@ -87,10 +87,11 @@ class AceClient:
 	raise AceException("Write error! " + str(e))
     
     
-  def aceInit(self, gender = AceConst.SEX_MALE, age = AceConst.GENDER_18_24, product_key = None):
+  def aceInit(self, gender = AceConst.SEX_MALE, age = AceConst.GENDER_18_24, product_key = None, pause_delay = 0):
     self._product_key = product_key
     self._gender = gender
     self._age = age
+    self._pausedelay = pause_delay
     self._write(AceMessage.request.HELLO)
     if not self._authevent.wait(5):
       logging.error("aceInit event timeout. Wrong key?")
@@ -200,4 +201,5 @@ class AceClient:
 	
       elif self._recvbuffer.startswith(AceMessage.response.RESUME):
 	logger.debug("RESUME event")
+	gevent.sleep(self._pausedelay)
 	self._resumeevent.set()
