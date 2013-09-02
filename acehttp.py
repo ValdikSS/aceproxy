@@ -6,6 +6,7 @@ Website: https://github.com/ValdikSS/AceProxy
 import gevent.monkey
 # Monkeypatching and all the stuff
 gevent.monkey.patch_all()
+import gevent.queue
 import aceclient
 import logging
 import BaseHTTPServer
@@ -22,14 +23,13 @@ class Ace:
   # Ace Stream port
   aceport = 62062
   if platform.system() == 'Windows':
-    from _winreg import *
+    import _winreg
     import os.path
-    reg = ConnectRegistry(None, HKEY_CURRENT_USER)
-    key = OpenKey(reg, 'Software\AceStream')
-    value = QueryValueEx(key, 'EnginePath')
+    reg = _winreg.ConnectRegistry(None, _winreg.HKEY_CURRENT_USER)
+    key = _winreg.OpenKey(reg, 'Software\AceStream')
+    value = _winreg.QueryValueEx(key, 'EnginePath')
     dirpath = os.path.dirname(value[0])
     aceport = int(open(dirpath + '\\acestream.port', 'r').read())
-    print aceport
     
   # AceClient debug level
   debug = logging.DEBUG
@@ -38,7 +38,9 @@ class Ace:
   # HTTP port
   httpport = 8000
   # Stream start delay for dumb players (in seconds)
-  httpdelay = 2
+  httpdelay = 3
+  # Stream queue size (1 = 4KB)
+  httpqueuelen = 100
   # HTTP debug level
   httpdebug = logging.DEBUG
     
@@ -55,20 +57,37 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       # We shouldn't be here
       return
     
-  def proxy(self):
+  def proxy_read(self):
     '''
-    Read video stream and write it to client
+    Read video stream and put its' data into a queue
     '''
     while True:
       try:
-	self.buffer = self.video.read(4*1024)
-	if not self.buffer:
+	data = self.video.read(4*1024)
+	if not data:
 	  #self.ace.destroy()
 	  # Video connection closed
 	  return
-	self.wfile.write(self.buffer)
+	self.buffer.put(data)
       except:
-	# We shouldn't be here
+	# Connection dropped
+	#self.ace.destroy()
+	return
+      
+    
+  def proxy_write(self):
+    '''
+    Read video queue and write it to client
+    '''
+    while True:
+      try:
+	if not self.proxyreadgreenlet.ready():
+	  self.wfile.write(self.buffer.get())
+	else:
+	  # proxy_read is dead
+	  return
+      except:
+	# Connection dropped
 	#self.ace.destroy()
 	return
 	
@@ -78,18 +97,21 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     or just normal connection close.
     '''
     logger = logging.getLogger('HangDetector')
-    while True:
-      logger.debug("PING...")
-      try:
+    try:
+      while True:
+	logger.debug("PING...")
 	if not self.rfile.read():
-	  logger.debug("Client disconnected, destroying ACE...")
-	  self.ace.destroy()
-	  self.proxygreenlet.kill()
-	  self.rfile.close()
-	  self.wfile.close()
-	  return
-      except:
-	return
+	  break
+    except:
+      self.proxyreadgreenlet.kill()
+      self.proxywritegreenlet.kill()
+      self.rfile.close()
+      self.wfile.close()
+    finally:
+      self.ace.destroy()
+      logger.debug("Client disconnected, destroying ACE...")
+      return
+	
 	
   def do_GET(self):
     logger = logging.getLogger('AceHandler')
@@ -119,6 +141,8 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       self.send_header("Content-Type", "video/mpeg")
       self.send_header("Accept-Ranges", "bytes")
       self.end_headers()
+      
+      self.buffer = gevent.queue.Queue(Ace.httpqueuelen)
       gevent.sleep(Ace.httpdelay)
 	
     except aceclient.AceException as e:
@@ -138,9 +162,12 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     
     logger.debug("Opened url")
     
-    self.proxygreenlet = gevent.spawn(self.proxy)
-    # Waiting until proxy() ends
-    self.proxygreenlet.join()
+    self.proxyreadgreenlet = gevent.spawn(self.proxy_read)
+    self.proxywritegreenlet = gevent.spawn(self.proxy_write)
+    
+    # Waiting until proxy_read() and proxy_write() ends
+    self.proxyreadgreenlet.join()
+    self.proxywritegreenlet.join()
     self.hanggreenlet.join()
     # If any...
     self.ace.destroy()
