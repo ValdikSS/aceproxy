@@ -40,8 +40,6 @@ class Ace:
   httpport = 8000
   # Stream start delay for dumb players (in seconds)
   httpdelay = 2
-  # Stream queue size (1 = 4KB)
-  httpqueuelen = 10
   # Obey PAUSE and RESUME commands (should prevent annoying buffering)
   httpobey = True
   # Stream send delay on PAUSE/RESUME commads (works only if option above is enabled)
@@ -58,11 +56,11 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     self.end_headers()
     self.wfile.close()
     
-  def proxy_read(self):
+  def proxyReadWrite(self):
     '''
-    Read video stream and put its' data into a queue
+    Read video stream and send it to client
     '''
-    logger = logging.getLogger('proxy_read')
+    logger = logging.getLogger('proxyReadWrite')
     logger.debug("Started")
     while True:
       try:
@@ -73,40 +71,19 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 	  # Video connection closed
 	  logger.debug("Video connection closed")
 	  return
-	self.buffer.put(data)
+	self.wfile.write(data)
       except:
 	# Video connection dropped
 	logger.debug("Video Connection dropped")
 	return
-      
-    
-  def proxy_write(self):
-    '''
-    Read video queue and write it to client
-    '''
-    logger = logging.getLogger('proxy_write')
-    logger.debug("Started")
-    while True:
-      try:
-	if not self.proxyreadgreenlet.ready():
-	  if Ace.httpobey:
-	    self.ace.getPlayEvent()
-	  self.wfile.write(self.buffer.get())
-	else:
-	  # proxy_read is dead
-	  logger.debug("dead")
-	  return
-      except:
-	# Client connection dropped
-	logger.debug("Client connection dropped")
-	return
 	
-  def hangdetector(self):
+	
+  def hangDetector(self):
     '''
     Detect client disconnection while in the middle of something
     or just normal connection close.
     '''
-    logger = logging.getLogger('HangDetector')
+    logger = logging.getLogger('hangDetector')
     logger.debug("Started")
     try:
       while True:
@@ -140,8 +117,8 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       self.ace.aceInit(product_key = Ace.acekey, pause_delay = Ace.httppausedelay)
       logger.debug("Ace inited")
       
-      self.hanggreenlet = gevent.spawn(self.hangdetector)
-      logger.debug("hangdetector spawned")
+      self.hanggreenlet = gevent.spawn(self.hangDetector)
+      logger.debug("hangDetector spawned")
       
       try:
 	self.ace.START(self.path.split('/')[1].lower(), urllib2.unquote(self.path.split('/')[2]))
@@ -149,10 +126,6 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 	self.die_with_error()
 	return
       
-      self.send_response(200)
-      logger.debug("Response sent")
-      
-      self.buffer = gevent.queue.Queue(Ace.httpqueuelen)
       gevent.sleep(Ace.httpdelay)
 	
     except aceclient.AceException as e:
@@ -168,8 +141,17 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       return      
     
     logger.debug("Got url " + self.url)
+    
+    # Sending client headers to videostream
+    self.video = urllib2.Request(self.url)
+    for key in self.headers.dict:
+      self.video.add_header(key, self.headers.dict[key])
     try:
-      self.video = urllib2.urlopen(self.url)
+      self.video = urllib2.urlopen(self.video)
+      # Sending client response
+      self.send_response(self.video.getcode())
+      logger.debug("Response sent")
+      
     except urllib2.URLError as e:
       logger.error("Error from URLLIB: " + str(e))
       self.die_with_error()
@@ -180,23 +162,24 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     del self.video.info().dict['connection']
     del self.video.info().dict['server']
     if self.video.info().dict.get('transfer-encoding'):
-      del self.video.info().dict['transfer-encoding']
+      del self.video.info().dict['transfer-encoding']  
+    if self.video.info().dict.get('keep-alive'):
+      del self.video.info().dict['keep-alive']
+    
+    # Sending videostream headers to client
     for key in self.video.info().dict:
       self.send_header(key, self.video.info().dict[key])
+    
     self.end_headers()
     logger.debug("Headers sent")
     
-    self.proxyreadgreenlet = gevent.spawn(self.proxy_read)
-    self.proxywritegreenlet = gevent.spawn(self.proxy_write)
+    self.proxyReadWritegreenlet = gevent.spawn(self.proxyReadWrite)
     
-    # Waiting until proxy_read() and proxy_write() ends
-    self.proxywritegreenlet.join()
-    logger.debug("read_write killed")
-    # proxy_read greenlet will deadlock if not killed
-    self.proxyreadgreenlet.kill()
-    logger.debug("read_proxy joined")
+    # Waiting until proxyReadWrite() ends
+    self.proxyReadWritegreenlet.join()
+    logger.debug("proxyReadWrite joined")
     self.hanggreenlet.join()
-    logger.debug("hangdetector joined")
+    logger.debug("hangDetector joined")
     
     # If any...
     self.ace.destroy()
