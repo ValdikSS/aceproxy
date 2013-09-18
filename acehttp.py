@@ -127,7 +127,7 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     '''
     logger = logging.getLogger('AceHandler')
     try:
-      if self.path.split('/')[1].lower() != 'pid' or not self.path.split('/')[2]:
+      if not self.path.split('/')[1].lower() in ('pid', 'torrent') or not self.path.split('/')[2]:
 	self.die_with_error()
 	return
     except IndexError:
@@ -144,7 +144,7 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       logger.debug("hangdetector spawned")
       
       try:
-	self.ace.START(self.path.split('/')[2])
+	self.ace.START(self.path.split('/')[1].lower(), urllib2.unquote(self.path.split('/')[2]))
       except aceclient.AceException:
 	self.die_with_error()
 	return
@@ -179,7 +179,8 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     self.send_header("Connection", "Close")
     del self.video.info().dict['connection']
     del self.video.info().dict['server']
-    del self.video.info().dict['transfer-encoding']
+    if self.video.info().dict.get('transfer-encoding'):
+      del self.video.info().dict['transfer-encoding']
     for key in self.video.info().dict:
       self.send_header(key, self.video.info().dict[key])
     self.end_headers()

@@ -105,10 +105,15 @@ class AceClient:
       return
     logging.debug("aceInit ended")
     
-  def START(self, pid):
+  def START(self, datatype, value):
     self._result = AsyncResult()
     self._urlresult = AsyncResult()
-    self._write(AceMessage.request.START('PID', {'content_id': pid}))
+    
+    if datatype.lower() == 'pid':
+      self._write(AceMessage.request.START('PID', {'content_id': value}))
+    elif datatype.lower() == 'torrent':
+      self._write(AceMessage.request.START('TORRENT', {'url': value}))
+      
     if not self._result.get():
       raise AceException("START error!")
     return
