@@ -16,8 +16,8 @@ import platform
 import greenlet
 
 class Ace:
-  # Ace program key
-  acekey = ''
+  # Ace program key (public no-ad key from Constantin)
+  acekey = 'kjYX790gTytRaXV04IvC-xZH3A18sj5b1Tf3I-J5XVS1xsj-j0797KwxxLpBl26HPvWMm'
   # Ace Stream host
   acehost = '127.0.0.1'
   # Ace Stream port (autodetect for Windows)
@@ -62,7 +62,6 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     '''
     Read video stream and put its' data into a queue
     '''
-    self.proxyrs = 'begin'
     logger = logging.getLogger('proxy_read')
     logger.debug("Started")
     while True:
