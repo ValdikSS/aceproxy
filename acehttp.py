@@ -150,11 +150,7 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 	return
       
       self.send_response(200)
-      self.send_header("Content-Type", "video/mpeg")
-      self.send_header("Accept-Ranges", "bytes")
-      self.send_header("Connection", "Close")
-      self.end_headers()
-      logger.debug("headers sent")
+      logger.debug("Response sent")
       
       self.buffer = gevent.queue.Queue(Ace.httpqueuelen)
       gevent.sleep(Ace.httpdelay)
@@ -180,6 +176,14 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       return
     
     logger.debug("Opened url")
+    self.send_header("Connection", "Close")
+    del self.video.info().dict['connection']
+    del self.video.info().dict['server']
+    del self.video.info().dict['transfer-encoding']
+    for key in self.video.info().dict:
+      self.send_header(key, self.video.info().dict[key])
+    self.end_headers()
+    logger.debug("Headers sent")
     
     self.proxyreadgreenlet = gevent.spawn(self.proxy_read)
     self.proxywritegreenlet = gevent.spawn(self.proxy_write)
