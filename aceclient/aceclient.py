@@ -206,6 +206,7 @@ class AceClient:
 	if self._status == 'main:err':
 	  logger.warning(self._status + ' with message ' + self._recvbuffer.split(';')[2])
 	  self._result.set(False)
+	  self._urlresult.set(False)
 	if self._status == 'main:starting':
 	  self._result.set(True)
 	  
