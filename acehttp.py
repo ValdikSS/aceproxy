@@ -44,6 +44,9 @@ class Ace:
   httpobey = True
   # Stream send delay on PAUSE/RESUME commads (works only if option above is enabled)
   httppausedelay = 3
+  # Fake User-Agents (not video players) which generates a lot of requests
+  # which Ace stream handles badly. Send them 200 OK and do nothing.
+  fakeuas = ('Mozilla/5.0 IMC plugin Macintosh')
   # HTTP debug level
   httpdebug = logging.DEBUG
     
@@ -112,6 +115,14 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       return
     
     try:
+      if self.headers.get('User-Agent') in Ace.fakeuas:
+	logger.debug("Got fake UA: " + self.headers.get('User-Agent'))
+	# Return 200 and exit
+	self.send_response(200)
+	self.end_headers()
+	self.wfile.close()
+	return
+	
       self.ace = aceclient.AceClient(Ace.acehost, Ace.aceport, debug=Ace.debug)
       logger.debug("Ace created")
       self.ace.aceInit(product_key = Ace.acekey, pause_delay = Ace.httppausedelay)
