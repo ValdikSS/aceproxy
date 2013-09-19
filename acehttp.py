@@ -125,8 +125,6 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       except aceclient.AceException:
 	self.die_with_error()
 	return
-      
-      gevent.sleep(Ace.httpdelay)
 	
     except aceclient.AceException as e:
       logger.error("ACE Exception while creating new instance of ace! " + str(e))
@@ -151,6 +149,8 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       # Sending client response
       self.send_response(self.video.getcode())
       logger.debug("Response sent")
+      # Sleeping httpdelay
+      gevent.sleep(Ace.httpdelay)
       
     except urllib2.URLError as e:
       logger.error("Error from URLLIB: " + str(e))
