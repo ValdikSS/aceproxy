@@ -34,8 +34,7 @@ class AceConfig:
   vlcdebug = logging.DEBUG
   
   # ------------------------
-  # Better not to use any of these with VLC!
-  # Set to 0, False, 0
+  # Better not to play with these!
   
   # Stream start delay for dumb players (in seconds)
   videodelay = 2

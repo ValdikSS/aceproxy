@@ -29,11 +29,28 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     '''
     logger = logging.getLogger('http_proxyReadWrite')
     logger.debug("Started")
+    
+    self.vlcstate = True
     while True:
       try:	
-	if AceConfig.videoobey:
-	  # Wait for PlayEvent if videoobey is enabled
+	if AceConfig.videoobey and not AceConfig.vlcuse:
+	  # Wait for PlayEvent if videoobey is enabled. Not for VLC
 	  self.ace.getPlayEvent()
+	  
+	if AceConfig.videoobey and AceConfig.vlcuse:
+	  # For VLC
+	  try:
+	    # Waiting 0.5 seconds. If timeout, there would be exception.
+	    # Set vlcstate to False in the exception and pause the stream
+	    self.ace.getPlayEvent(0.5)
+	    if not self.vlcstate:
+	      AceStuff.vlcclient.unPauseBroadcast(self.path_unquoted)
+	      self.vlcstate = True
+	  except gevent.Timeout:
+	    if self.vlcstate:
+	      AceStuff.vlcclient.pauseBroadcast(self.path_unquoted)
+	      self.vlcstate = False
+	    
 	data = self.video.read(4*1024)
 	if data:
 	  self.wfile.write(data)
@@ -88,21 +105,21 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       self.die_with_error()
       return
     
-    path_unquoted = urllib2.unquote(self.path.split('/')[2])
+    self.path_unquoted = urllib2.unquote(self.path.split('/')[2])
     
     # Adding client to clientcounter
-    clients = AceStuff.clientcounter.add(path_unquoted)
+    clients = AceStuff.clientcounter.add(self.path_unquoted)
     
     # If we don't use VLC and we're not the first client
     if clients != 1 and not AceConfig.vlcuse:
-      AceStuff.clientcounter.delete(path_unquoted)
+      AceStuff.clientcounter.delete(self.path_unquoted)
       self.die_with_error()
       return
     
     # Pretend to work fine with Fake UAs
     if AceConfig.fakeuas in self.headers.get('User-Agent'):
       logger.debug("Got fake UA: " + self.headers.get('User-Agent'))
-      AceStuff.clientcounter.delete(path_unquoted)
+      AceStuff.clientcounter.delete(self.path_unquoted)
       # Return 200 and exit
       self.send_response(200)
       self.end_headers()
@@ -114,11 +131,11 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       try:
 	self.ace = aceclient.AceClient(AceConfig.acehost, AceConfig.aceport, debug=AceConfig.debug)
 	# Adding AceClient instance to pool
-	AceStuff.clientcounter.addAce(path_unquoted, self.ace)
+	AceStuff.clientcounter.addAce(self.path_unquoted, self.ace)
 	logger.debug("AceClient created")
       except aceclient.AceException as e:
 	logger.error("AceClient create exception. ERROR: " + str(e))
-	AceStuff.clientcounter.delete(path_unquoted)
+	AceStuff.clientcounter.delete(self.path_unquoted)
 	self.die_with_error()
 	return
     
@@ -130,7 +147,7 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       if clients == 1:
 	self.ace.aceInit(product_key = AceConfig.acekey, pause_delay = AceConfig.videopausedelay)
 	logger.debug("AceClient inited")
-	self.ace.START(self.path.split('/')[1].lower(), path_unquoted)
+	self.ace.START(self.path.split('/')[1].lower(), self.path_unquoted)
 	logger.debug("START done")
       
       # Getting URL
@@ -140,13 +157,15 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 	
 	# If using VLC, add this url to VLC
 	if AceConfig.vlcuse:
-	  AceStuff.vlcclient.startBroadcast(path_unquoted, self.url)
+	  # Sleeping videodelay
+	  gevent.sleep(AceConfig.videodelay)
+	  AceStuff.vlcclient.startBroadcast(self.path_unquoted, self.url)
 	  # Sleep a bit, because sometimes VLC doesn't open port in time
 	  gevent.sleep(0.5)
 	
       # Building new VLC url
       if AceConfig.vlcuse:
-	self.url = 'http://' + AceConfig.vlchost + ':' + str(AceConfig.vlcoutport) + '/' + path_unquoted
+	self.url = 'http://' + AceConfig.vlchost + ':' + str(AceConfig.vlcoutport) + '/' + self.path_unquoted
 	logger.debug("VLC url " + self.url)
 	
       # Sending client headers to videostream
@@ -197,17 +216,17 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       self.die_with_error()
     finally:
       logger.debug("END REQUEST")
-      if not AceStuff.clientcounter.delete(path_unquoted):
+      if not AceStuff.clientcounter.delete(self.path_unquoted):
 	logger.debug("That was the last client, destroying AceClient")
 	if AceConfig.vlcuse:
 	  try:
-	    AceStuff.vlcclient.stopBroadcast(path_unquoted)
+	    AceStuff.vlcclient.stopBroadcast(self.path_unquoted)
 	  except:
 	    pass
-	self.ace = AceStuff.clientcounter.getAce(path_unquoted)
+	self.ace = AceStuff.clientcounter.getAce(self.path_unquoted)
 	if self.ace:
 	  self.ace.destroy()
-	  AceStuff.clientcounter.deleteAce(path_unquoted)
+	  AceStuff.clientcounter.deleteAce(self.path_unquoted)
       
       
 class AceServer(SocketServer.ThreadingMixIn, BaseHTTPServer.HTTPServer):

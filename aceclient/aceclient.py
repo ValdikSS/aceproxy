@@ -169,11 +169,11 @@ class AceClient:
       raise AceException("getURL timeout!")
       
   
-  def getPlayEvent(self):
+  def getPlayEvent(self, timeout = None):
     '''
     Blocking while in PAUSE, non-blocking while in RESUME
     '''
-    self._resumeevent.wait()
+    self._resumeevent.wait(timeout = timeout)
     return
     
     

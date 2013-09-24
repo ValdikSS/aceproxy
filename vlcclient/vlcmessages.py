@@ -9,16 +9,20 @@ class VlcMessage:
     
     @staticmethod
     def startBroadcast(stream_name, input, out_port):
-      return 'new ' + stream_name + ' broadcast input "' + input + '" output #http{mux=ts,dst=:' + str(out_port) + '/' + stream_name + '} enabled' + \
-	      "\r\n" + 'control ' + stream_name + ' play'
+      return 'new "' + stream_name + '" broadcast input "' + input + '" output #http{mux=ts,dst=:' + str(out_port) + '/' + stream_name + '} enabled' + \
+	      "\r\n" + 'control "' + stream_name + '" play'
 	    
     @staticmethod    
     def stopBroadcast(stream_name):
-      return 'del ' + stream_name
+      return 'del "' + stream_name + '"'
     
-    @staticmethod    
-    def checkBroadcast(stream_name):
-      return 'new ' + stream_name
+    @staticmethod
+    def pauseBroadcast(stream_name):
+      return 'control "' + stream_name + '" pause'
+    
+    @staticmethod
+    def unPauseBroadcast(stream_name):
+      return 'control "' + stream_name + '" play'
     
   class response:
     WRONGPASS = 'Wrong password'
