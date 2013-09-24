@@ -132,12 +132,14 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 	# If using VLC, add this url to VLC
 	if AceConfig.vlcuse:
 	  AceStuff.vlcclient.startBroadcast(path_unquoted, self.url)
+	  # Sleep a bit, because sometimes VLC doesn't open port in time
+	  gevent.sleep(0.5)
 	
       # Building new VLC url
       if AceConfig.vlcuse:
 	self.url = 'http://' + AceConfig.vlchost + ':' + str(AceConfig.vlcoutport) + '/' + path_unquoted
 	logger.debug("VLC url " + self.url)
-    
+	
       # Sending client headers to videostream
       self.video = urllib2.Request(self.url)
       for key in self.headers.dict:
