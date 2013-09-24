@@ -13,6 +13,7 @@ Linux
 
 > git clone https://github.com/ValdikSS/aceproxy.git
 
+* Edit aceconfig.py if needed
 * Start Ace Stream Engine, VLC and acehttp.py
 
 > acestreamengine --client-console
@@ -31,6 +32,7 @@ Windows
 
 or download ZIP of it.
 
+* Edit aceconfig.py if needed
 * Start Ace Stream Engine and VLC (with vlc -I telnet --network-caching=1000)
 * Start python.exe \path\to\acehttp.py
 * Run any stream with http://localhost:8000/pid/ace-id-goes-here, http://localhost:8000/torrent/http%3A%2F%2Fsite.com%2Fpath%2Ffile.acelive
