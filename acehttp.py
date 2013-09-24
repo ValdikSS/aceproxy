@@ -3,11 +3,11 @@ AceProxy: Ace Stream to HTTP Proxy
 
 Website: https://github.com/ValdikSS/AceProxy
 '''
+import gevent
 import gevent.monkey
 # Monkeypatching and all the stuff
 gevent.monkey.patch_all()
 import gevent.queue, logging, aceclient, BaseHTTPServer, SocketServer, urllib2
-#greenlet
 from aceconfig import AceConfig
 import vlcclient
 from aceclient.clientcounter import ClientCounter
@@ -30,11 +30,16 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     logger = logging.getLogger('http_proxyReadWrite')
     logger.debug("Started")
     while True:
-      try:
+      try:	
 	if AceConfig.videoobey:
 	  # Wait for PlayEvent if videoobey is enabled
 	  self.ace.getPlayEvent()
-	self.wfile.write(self.video.read(4*1024))
+	data = self.video.read(4*1024)
+	if data:
+	  self.wfile.write(data)
+	else:
+	  # Prevent 100% CPU usage
+	  gevent.sleep(0.5)
       except:
 	# Video connection dropped
 	logger.debug("Video Connection dropped")
@@ -61,6 +66,10 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       logger.debug("Client disconnected")
       self.wfile.close()
       self.rfile.close()
+      try:
+	self.proxyReadWritegreenlet.kill()
+      except:
+	pass
       return
 	
 	
@@ -69,6 +78,7 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     GET request handler
     '''
     logger = logging.getLogger('http_AceHandler')
+    
     try:
       # If first parameter is 'pid' or 'torrent', and second parameter exists
       if not self.path.split('/')[1].lower() in ('pid', 'torrent') or not self.path.split('/')[2]:
@@ -82,7 +92,6 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     
     # Adding client to clientcounter
     clients = AceStuff.clientcounter.add(path_unquoted)
-    print "CLIENTS: " + str(clients)
     
     # If we don't use VLC and we're not the first client
     if clients != 1 and not AceConfig.vlcuse:
