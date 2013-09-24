@@ -1,13 +1,13 @@
 from acemessages import *
-import telnetlib, logging
 
 from gevent import monkey
 monkey.patch_all()
 
+import telnetlib, logging
+
 import gevent
 from gevent.event import AsyncResult
 from gevent.event import Event
-import greenlet
 
 
 class AceException(Exception):
@@ -21,13 +21,15 @@ class AceException(Exception):
 
 
 class AceClient:
-  def __init__(self, host, port, connect_timeout = 5, debug = logging.ERROR):
+  def __init__(self, host, port, connect_timeout = 5, result_timeout = 5, debug = logging.ERROR):
     # Receive buffer
     self._recvbuffer = None
     # Stream URL
     self._url = None
     # Ace stream socket
     self._socket = None
+    # Result timeout
+    self._resulttimeout = result_timeout
     # Shutting down flag
     self._shuttingDown = Event()
     # Product key
@@ -47,11 +49,10 @@ class AceClient:
     self._authevent = Event()
     # Result for getURL()
     self._urlresult = AsyncResult()
+    # Event for resuming from PAUSE
     self._resumeevent = Event()
     
-    
-    # Logging init
-    logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', datefmt='%d.%m.%Y %H:%M:%S', level=self._debug)
+    # Logger
     logger = logging.getLogger('AceClient_init')
     
     try:
@@ -60,21 +61,32 @@ class AceClient:
     except Exception as e:
       raise AceException("Socket creation error! Ace is not running? " + str(e))
     
+    # Spawning recvData greenlet
     gevent.spawn(self._recvData)
     gevent.sleep()
     
     
   def __del__(self):
+    # Destructor just calls destroy() method
     self.destroy()
     
     
   def destroy(self):
-    logger = logging.getLogger("ace_destroy")
-    self._resumeevent.set()
-    self._urlresult.set()
+    '''
+    AceClient Destructor
+    '''
     if self._shuttingDown.isSet():
-      # Already in the middle of destroying
+    # Already in the middle of destroying
       return
+    
+    # Logger
+    logger = logging.getLogger("AceClient_destroy")
+    # We should resume video to prevent read greenlet deadlock
+    self._resumeevent.set()
+    # And to prevent getUrl deadlock
+    self._urlresult.set()
+
+    # If socket is still alive (connected)
     if self._socket:
       try:
 	logger.debug("Destroying client...")
@@ -83,29 +95,51 @@ class AceClient:
       except:
 	# Ignore exceptions on destroy
 	pass
-    
+      
   def _write(self, message):
-      try:
-	self._socket.write(message + "\r\n")
-      except EOFError as e:
-	raise AceException("Write error! " + str(e))
+    # Return if in the middle of destroying
+    if self._shuttingDown.isSet():
+      return
+    
+    try:
+      self._socket.write(message + "\r\n")
+    except EOFError as e:
+      raise AceException("Write error! " + str(e))
     
     
   def aceInit(self, gender = AceConst.SEX_MALE, age = AceConst.GENDER_18_24, product_key = None, pause_delay = 0):
     self._product_key = product_key
     self._gender = gender
     self._age = age
+    # PAUSE/RESUME delay
     self._pausedelay = pause_delay
+    
+    # Logger
+    logger = logging.getLogger("AceClient_aceInit")
+    
+    # Sending HELLO
     self._write(AceMessage.request.HELLO)
-    if not self._authevent.wait(5):
-      logging.error("aceInit event timeout. Wrong key?")
+    if not self._authevent.wait(self._resulttimeout):
+      logger.error("aceInit event timeout. Wrong key?")
+      raise AceException("aceInit event timeout. Wrong key?")
       return
+    
     if not self._auth:
-      logging.error("aceInit auth error. Wrong key?")
+      logger.error("aceInit auth error. Wrong key?")
+      raise AceException("aceInit auth error. Wrong key?")
       return
-    logging.debug("aceInit ended")
+    
+    logger.debug("aceInit ended")
+    
     
   def START(self, datatype, value):
+    '''
+    Start video method
+    '''
+    
+    # Logger
+    logger = logging.getLogger("AceClient_START")
+    
     self._result = AsyncResult()
     self._urlresult = AsyncResult()
     
@@ -114,41 +148,54 @@ class AceClient:
     elif datatype.lower() == 'torrent':
       self._write(AceMessage.request.START('TORRENT', {'url': value}))
       
-    if not self._result.get():
-      raise AceException("START error!")
-    return
+    try:
+      if not self._result.get(timeout = self._resulttimeout):
+	logger.error("START error!")
+	raise AceException("START error!")
+    except gevent.Timeout:
+      logger.error("START timeout!")
+      raise AceException("START timeout!")
   
   
-  def getUrl(self):
-    res = self._urlresult.get()
-    if res:
+  def getUrl(self, timeout = 40):
+    # Logger
+    logger = logging.getLogger("AceClient_getURL")
+    
+    try:
+      res = self._urlresult.get(timeout = timeout)
       return res
-    else:
-      return False
-  
+    except gevent.Timeout:
+      logger.error("getURL timeout!")
+      raise AceException("getURL timeout!")
+      
   
   def getPlayEvent(self):
+    '''
+    Blocking while in PAUSE, non-blocking while in RESUME
+    '''
     self._resumeevent.wait()
     return
     
     
   def _recvData(self):
+    '''
+    Data receiver method for greenlet
+    '''
     logger = logging.getLogger('AceClient_recvdata')
 
     while True:
       gevent.sleep()
       if self._shuttingDown.isSet():
-	logger.debug("Shutting down is in the process, returning from _recvData...")
+	logger.debug("Terminating")
 	self._socket.close()
 	return
       
       try:
 	self._recvbuffer = self._socket.read_until("\r\n", 1)
-      except Exception as e:
-	if self._shuttingDown.isSet():
-	  logger.debug("Shutting down is in the process, returning from _recvData after socket_read...")
-	else:
-	  raise e
+      except:
+	# If something happened during read, abandon reader
+	# Should not ever happen
+	logger.error("Exception at socket read")
 	
 	
       # Parsing everything
@@ -165,7 +212,7 @@ class AceClient:
 	# NOTREADY
 	# Not implemented yet
 	logger.error("Ace is not ready. Wrong auth?")
-	pass
+	return
       
       elif self._recvbuffer.startswith(AceMessage.response.START):
 	# START
