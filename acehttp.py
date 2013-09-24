@@ -9,6 +9,8 @@ gevent.monkey.patch_all()
 import gevent.queue, logging, aceclient, BaseHTTPServer, SocketServer, urllib2
 #greenlet
 from aceconfig import AceConfig
+import vlcclient
+from aceclient.clientcounter import ClientCounter
 
 class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
   
@@ -32,15 +34,12 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 	if AceConfig.videoobey:
 	  # Wait for PlayEvent if videoobey is enabled
 	  self.ace.getPlayEvent()
-	data = self.video.read(4*1024)
-	if not data:
-	  # Video connection closed
-	  logger.debug("Video connection closed")
-	  return
-	self.wfile.write(data)
+	self.wfile.write(self.video.read(4*1024))
       except:
 	# Video connection dropped
 	logger.debug("Video Connection dropped")
+	self.wfile.close()
+	self.rfile.close()
 	return
 	
 	
@@ -59,8 +58,9 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     except:
       pass
     finally:
-      logger.debug("Client disconnected, destroying AceClient...")
-      self.ace.destroy()
+      logger.debug("Client disconnected")
+      self.wfile.close()
+      self.rfile.close()
       return
 	
 	
@@ -78,39 +78,65 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       self.die_with_error()
       return
     
+    path_unquoted = urllib2.unquote(self.path.split('/')[2])
+    
+    # Adding client to clientcounter
+    clients = AceStuff.clientcounter.add(path_unquoted)
+    print "CLIENTS: " + str(clients)
+    
+    # If we don't use VLC and we're not the first client
+    if clients != 1 and not AceConfig.vlcuse:
+      AceStuff.clientcounter.delete(path_unquoted)
+      self.die_with_error()
+      return
     
     # Pretend to work fine with Fake UAs
     if AceConfig.fakeuas in self.headers.get('User-Agent'):
       logger.debug("Got fake UA: " + self.headers.get('User-Agent'))
+      AceStuff.clientcounter.delete(path_unquoted)
       # Return 200 and exit
       self.send_response(200)
       self.end_headers()
       self.wfile.close()
       return
     
-    # Creating AceClient
-    try:
-      self.ace = aceclient.AceClient(AceConfig.acehost, AceConfig.aceport, debug=AceConfig.debug)
-      logger.debug("AceClient created")
-    except aceclient.AceException as e:
-      logger.error("AceClient create exception. ERROR: " + str(e))
-      self.die_with_error()
-      return
+    if clients == 1:
+    # If we are the only client, create AceClient
+      try:
+	self.ace = aceclient.AceClient(AceConfig.acehost, AceConfig.aceport, debug=AceConfig.debug)
+	# Adding AceClient instance to pool
+	AceStuff.clientcounter.addAce(path_unquoted, self.ace)
+	logger.debug("AceClient created")
+      except aceclient.AceException as e:
+	logger.error("AceClient create exception. ERROR: " + str(e))
+	AceStuff.clientcounter.delete(path_unquoted)
+	self.die_with_error()
+	return
     
     try:
-      # Initializing AceClient
-      self.ace.aceInit(product_key = AceConfig.acekey, pause_delay = AceConfig.videopausedelay)
-      logger.debug("AceClient inited")
       self.hanggreenlet = gevent.spawn(self.hangDetector)
       logger.debug("hangDetector spawned")
       
-      logger.debug("Executing START")
-      self.ace.START(self.path.split('/')[1].lower(), urllib2.unquote(self.path.split('/')[2]))
-      logger.debug("START done")
+      # Initializing AceClient
+      if clients == 1:
+	self.ace.aceInit(product_key = AceConfig.acekey, pause_delay = AceConfig.videopausedelay)
+	logger.debug("AceClient inited")
+	self.ace.START(self.path.split('/')[1].lower(), path_unquoted)
+	logger.debug("START done")
       
       # Getting URL
-      self.url = self.ace.getUrl()
-      logger.debug("Got url " + self.url)
+      if clients == 1:
+	self.url = self.ace.getUrl()
+	logger.debug("Got url " + self.url)
+	
+	# If using VLC, add this url to VLC
+	if AceConfig.vlcuse:
+	  AceStuff.vlcclient.startBroadcast(path_unquoted, self.url)
+	
+      # Building new VLC url
+      if AceConfig.vlcuse:
+	self.url = 'http://' + AceConfig.vlchost + ':' + str(AceConfig.vlcoutport) + '/' + path_unquoted
+	logger.debug("VLC url " + self.url)
     
       # Sending client headers to videostream
       self.video = urllib2.Request(self.url)
@@ -126,11 +152,13 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       logger.debug("Opened url")
       
       self.send_header("Connection", "Close")
-      del self.video.info().dict['connection']
-      del self.video.info().dict['server']
-      if self.video.info().dict.get('transfer-encoding'):
+      if self.video.info().dict.has_key('connection'):
+	del self.video.info().dict['connection']
+      if self.video.info().dict.has_key('server'):
+	del self.video.info().dict['server']
+      if self.video.info().dict.has_key('transfer-encoding'):
 	del self.video.info().dict['transfer-encoding']  
-      if self.video.info().dict.get('keep-alive'):
+      if self.video.info().dict.has_key('keep-alive'):
 	del self.video.info().dict['keep-alive']
       
       # Sending videostream headers to client
@@ -158,15 +186,41 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       self.die_with_error()
     finally:
       logger.debug("END REQUEST")
-      self.ace.destroy()
+      if not AceStuff.clientcounter.delete(path_unquoted):
+	logger.debug("That was the last client, destroying AceClient")
+	if AceConfig.vlcuse:
+	  try:
+	    AceStuff.vlcclient.stopBroadcast(path_unquoted)
+	  except:
+	    pass
+	self.ace = AceStuff.clientcounter.getAce(path_unquoted)
+	if self.ace:
+	  self.ace.destroy()
+	  AceStuff.clientcounter.deleteAce(path_unquoted)
       
       
 class AceServer(SocketServer.ThreadingMixIn, BaseHTTPServer.HTTPServer):
   pass
 
+class AceStuff:
+  pass
+
 server = AceServer((AceConfig.httphost, AceConfig.httpport), AceHandler)
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', datefmt='%d.%m.%Y %H:%M:%S', level=AceConfig.httpdebug)
 logger = logging.getLogger('HTTP')
+
+# Creating ClientCounter
+AceStuff.clientcounter = ClientCounter()
+
+if AceConfig.vlcuse:
+  # Creating VLC VLM Client
+  try:
+    AceStuff.vlcclient = vlcclient.VlcClient(host = AceConfig.vlchost, port = AceConfig.vlcport, password = AceConfig.vlcpass,
+				    out_port = AceConfig.vlcoutport ,debug = AceConfig.vlcdebug)
+  except vlcclient.VlcException as e:
+    print e
+    quit()
+
 
 try:
   logger.info("Server started.")

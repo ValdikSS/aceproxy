@@ -19,16 +19,23 @@ class AceConfig:
   httpport = 8000
   
   # Enable VLC or not
+  # I strongly recommend to use VLC, because it lags a lot without it
+  # That's Ace Stream Engine fault.
   vlcuse = False
   # VLC host
   vlchost = '127.0.0.1'
-  # VLC port
+  # VLC telnet port
   vlcport = 4212
+  # VLC streaming port 
+  vlcoutport = 8081
   # VLC password
   vlcpass = 'admin'
+  # VLC debug level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+  vlcdebug = logging.DEBUG
   
   # ------------------------
-  # Better not to use any of these with VLC
+  # Better not to use any of these with VLC!
+  # Set to 0, False, 0
   
   # Stream start delay for dumb players (in seconds)
   videodelay = 2
