@@ -17,7 +17,9 @@ Linux
 * Start Ace Stream Engine, VLC and acehttp.py
 
 > acestreamengine --client-console
+
 > vlc -I telnet --network-caching=1000
+
 > python2 acehttp.py
 
 * Run any stream with http://localhost:8000/pid/ace-id-goes-here, http://localhost:8000/torrent/http%3A%2F%2Fsite.com%2Fpath%2Ffile.acelive
