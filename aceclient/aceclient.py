@@ -86,15 +86,16 @@ class AceClient:
     # And to prevent getUrl deadlock
     self._urlresult.set()
 
-    # If socket is still alive (connected)
-    if self._socket:
-      try:
-	logger.debug("Destroying client...")
-	self._write(AceMessage.request.SHUTDOWN)
-	self._shuttingDown.set()
-      except:
-	# Ignore exceptions on destroy
-	pass
+    # Trying to disconnect
+    try:
+      logger.debug("Destroying client...")
+      self._shuttingDown.set()
+      self._write(AceMessage.request.SHUTDOWN)
+    except:
+      # Ignore exceptions on destroy
+      pass
+    finally:
+      self._shuttingDown.set()
       
   def _write(self, message):
     # Return if in the middle of destroying
