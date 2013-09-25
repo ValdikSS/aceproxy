@@ -182,11 +182,6 @@ class AceClient:
 
     while True:
       gevent.sleep()
-      if self._shuttingDown.isSet():
-	logger.debug("Terminating")
-	self._socket.close()
-	return
-      
       try:
 	self._recvbuffer = self._socket.read_until("\r\n", 1)
       except:
