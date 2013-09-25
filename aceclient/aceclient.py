@@ -247,8 +247,15 @@ class AceClient:
 	  logger.warning(self._status + ' with message ' + self._recvbuffer.split(';')[2])
 	  self._result.set(False)
 	  self._urlresult.set(False)
-	if self._status == 'main:starting':
+	elif self._status == 'main:starting':
 	  self._result.set(True)
+	elif self._status == 'main:idle':
+	  # Ace Engine Bug
+	  logger.error("Ace Engine BUG!")
+	  # Sleeping 5 seconds to make sure engine is in normal state
+	  gevent.sleep(5)
+	  self._result.set(False)
+	  self._urlresult.set(False)
 	  
       elif self._recvbuffer.startswith(AceMessage.response.PAUSE):
 	logger.debug("PAUSE event")
