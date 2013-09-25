@@ -98,10 +98,6 @@ class AceClient:
       self._shuttingDown.set()
       
   def _write(self, message):
-    # Return if in the middle of destroying
-    if self._shuttingDown.isSet():
-      return
-    
     try:
       self._socket.write(message + "\r\n")
     except EOFError as e:
