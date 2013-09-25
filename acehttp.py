@@ -117,7 +117,7 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       return
     
     # Pretend to work fine with Fake UAs
-    if AceConfig.fakeuas in self.headers.get('User-Agent'):
+    if self.headers.get('User-Agent') and AceConfig.fakeuas in self.headers.get('User-Agent'):
       logger.debug("Got fake UA: " + self.headers.get('User-Agent'))
       AceStuff.clientcounter.delete(self.path_unquoted)
       # Return 200 and exit
