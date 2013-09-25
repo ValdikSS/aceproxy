@@ -227,7 +227,8 @@ class AceClient:
 	pass
       
       elif self._recvbuffer.startswith(AceMessage.response.SHUTDOWN):
-	self.destroy()
+	logger.debug("Got SHUTDOWN from engine")
+	self._socket.close()
 	return
 	
       elif self._recvbuffer.startswith(AceMessage.response.AUTH):
