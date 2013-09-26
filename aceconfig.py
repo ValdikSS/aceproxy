@@ -63,7 +63,24 @@ class AceConfig:
     key = _winreg.OpenKey(reg, 'Software\AceStream')
     value = _winreg.QueryValueEx(key, 'EnginePath')
     dirpath = os.path.dirname(value[0])
-    aceport = int(open(dirpath + '\\acestream.port', 'r').read())
+    try:
+      aceport = int(open(dirpath + '\\acestream.port', 'r').read())
+    except IOError:
+      # Ace Stream is not running, start it
+      import subprocess, time
+      subprocess.Popen([value[0]])
+      _started = False
+      for i in xrange(10):
+	time.sleep(1)
+	try:
+	  aceport = int(open(dirpath + '\\acestream.port', 'r').read())
+	  _started = True
+	  break
+	except IOError:
+	  _started = False
+      if not _started:
+	print "Can't start engine!"
+	quit()
   '''
   Do not touch this
   '''
