@@ -43,6 +43,8 @@ class AceConfig:
   videoobey = True
   # Stream send delay on PAUSE/RESUME commads (works only if option above is enabled)
   videopausedelay = 3
+  # Pre-buffering timeout
+  videotimeout = 40
   # ------------------------
   
   # Fake User-Agents (not video players) which generates a lot of requests

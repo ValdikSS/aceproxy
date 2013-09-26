@@ -160,7 +160,7 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       
       # Getting URL
       if clients == 1:
-	self.url = self.ace.getUrl()
+	self.url = self.ace.getUrl(AceConfig.videotimeout)
 	logger.debug("Got url " + self.url)
 	
 	# If using VLC, add this url to VLC
