@@ -4,8 +4,8 @@ AceProxy configuration script
 import logging, platform
 
 class AceConfig:
-  # Ace program key (The default key works only with no-ads premium option)
-  acekey = 'kjYX790gTytRaXV04IvC-xZH3A18sj5b1Tf3I-J5XVS1xsj-j0797KwxxLpBl26HPvWMm'
+  # Ace program key (None uses remote key generator)
+  acekey = None
   # Ace Stream Engine host
   acehost = '127.0.0.1'
   # Ace Stream Engine port (autodetect for Windows)
@@ -34,7 +34,8 @@ class AceConfig:
   vlcdebug = logging.DEBUG
   
   # ------------------------
-  # Better not to play with these!
+  # Better not to play with these in non-VLC mode!
+  # Set to 0, False, 0 for best performance in VLC mode.
   
   # Stream start delay for dumb players (in seconds)
   videodelay = 2
