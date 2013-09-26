@@ -57,7 +57,7 @@ class AceClient:
     
     try:
       self._socket = telnetlib.Telnet(host, port, connect_timeout)
-      logger.debug("Successfully connected with Ace!")
+      logger.info("Successfully connected with Ace!")
     except Exception as e:
       raise AceException("Socket creation error! Ace is not running? " + str(e))
     
@@ -117,13 +117,15 @@ class AceClient:
     # Sending HELLO
     self._write(AceMessage.request.HELLO)
     if not self._authevent.wait(self._resulttimeout):
-      logger.error("aceInit event timeout. Wrong key?")
-      raise AceException("aceInit event timeout. Wrong key?")
+      errmsg = "Authentication timeout. Wrong key?"
+      logger.error(errmsg)
+      raise AceException(errmsg)
       return
     
     if not self._auth:
-      logger.error("aceInit auth error. Wrong key?")
-      raise AceException("aceInit auth error. Wrong key?")
+      errmsg = "Authentication error. Wrong key?"
+      logger.error(errmsg)
+      raise AceException(errmsg)
       return
     
     logger.debug("aceInit ended")
@@ -147,11 +149,13 @@ class AceClient:
       
     try:
       if not self._result.get(timeout = self._resulttimeout):
-	logger.error("START error!")
-	raise AceException("START error!")
+	errmsg = "START error!"
+	logger.error(errmsg)
+	raise AceException(errmsg)
     except gevent.Timeout:
-      logger.error("START timeout!")
-      raise AceException("START timeout!")
+      errmsg = "START timeout!"
+      logger.error(errmsg)
+      raise AceException(errmsg)
   
   
   def getUrl(self, timeout = 40):
@@ -162,8 +166,9 @@ class AceClient:
       res = self._urlresult.get(timeout = timeout)
       return res
     except gevent.Timeout:
-      logger.error("getURL timeout!")
-      raise AceException("getURL timeout!")
+      errmsg = "getURL timeout!"
+      logger.error(errmsg)
+      raise AceException(errmsg)
       
   
   def getPlayEvent(self, timeout = None):
@@ -202,7 +207,6 @@ class AceClient:
 	
       elif self._recvbuffer.startswith(AceMessage.response.NOTREADY):
 	# NOTREADY
-	# Not implemented yet
 	logger.error("Ace is not ready. Wrong auth?")
 	return
       
@@ -243,6 +247,7 @@ class AceClient:
 	if self._tempstatus != self._status:
 	  self._status = self._tempstatus
 	  logger.debug("STATUS changed to "+self._status)
+	  
 	if self._status == 'main:err':
 	  logger.warning(self._status + ' with message ' + self._recvbuffer.split(';')[2])
 	  self._result.set_exception(AceException(self._status + ' with message ' + self._recvbuffer.split(';')[2]))
@@ -251,9 +256,10 @@ class AceClient:
 	  self._result.set(True)
 	elif self._status == 'main:idle':
 	  # Ace Engine Bug
-	  logger.error("Ace Engine BUG!")
-	  self._result.set_exception(AceException("Ace engine BUG"))
-	  self._urlresult.set_exception(AceException("Ace engine BUG"))
+	  errmsg = "Ace Engine BUG!"
+	  logger.error(errmsg)
+	  self._result.set_exception(AceException(errmsg))
+	  self._urlresult.set_exception(AceException(errmsg))
 	  
       elif self._recvbuffer.startswith(AceMessage.response.PAUSE):
 	logger.debug("PAUSE event")

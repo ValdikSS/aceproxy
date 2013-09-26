@@ -67,11 +67,13 @@ class VlcClient:
     # Waiting for authentication event
     try:
       if self._auth.get(timeout = self._resulttimeout) == False:
-	logger.error("Authentication error")
-	raise VlcException('Authentication error')
+	errmsg = "Authentication error"
+	logger.error(errmsg)
+	raise VlcException(errmsg)
     except gevent.Timeout:
-      logger.error("Authentication timeout")
-      raise VlcException("Authentication timeout")
+      errmsg = "Authentication timeout"
+      logger.error(errmsg)
+      raise VlcException(errmsg)
     
     
   def __del__(self):
