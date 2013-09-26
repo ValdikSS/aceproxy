@@ -2,7 +2,7 @@
 Minimal Ace Stream client library to use with HTTP Proxy
 '''
 
-import hashlib, platform
+import hashlib, platform, urllib2
 
 class AceConst:
   APIVERSION = 3
@@ -40,8 +40,13 @@ class AceMessage:
     
     @staticmethod
     def READY_key(request_key, product_key):
-      return 'READY key=' + product_key.split('-')[0] + '-' + \
-        hashlib.sha1(request_key + product_key).hexdigest()
+      if product_key:
+	# If product_key is set, use it
+	return 'READY key=' + product_key.split('-')[0] + '-' + \
+	  hashlib.sha1(request_key + product_key).hexdigest()
+      else:
+	# Use site with key generator
+	return 'READY key=' + urllib2.urlopen("http://valdikss.org.ru/tv/key.php?key=" + request_key).read()
     # End READY_KEY
     
     @staticmethod
