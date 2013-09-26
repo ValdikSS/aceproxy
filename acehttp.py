@@ -7,7 +7,7 @@ import gevent
 import gevent.monkey
 # Monkeypatching and all the stuff
 gevent.monkey.patch_all()
-import gevent.queue, logging, aceclient, BaseHTTPServer, SocketServer, urllib2
+import gevent.queue, logging, aceclient, BaseHTTPServer, SocketServer, urllib2, hashlib
 from aceconfig import AceConfig
 import vlcclient
 from aceclient.clientcounter import ClientCounter
@@ -44,11 +44,11 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 	    # Set vlcstate to False in the exception and pause the stream
 	    self.ace.getPlayEvent(0.5)
 	    if not self.vlcstate:
-	      AceStuff.vlcclient.unPauseBroadcast(self.path_unquoted)
+	      AceStuff.vlcclient.unPauseBroadcast(self.vlcid)
 	      self.vlcstate = True
 	  except gevent.Timeout:
 	    if self.vlcstate:
-	      AceStuff.vlcclient.pauseBroadcast(self.path_unquoted)
+	      AceStuff.vlcclient.pauseBroadcast(self.vlcid)
 	      self.vlcstate = False
 	    
 	data = self.video.read(4*1024)
@@ -106,6 +106,14 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       return
     
     self.path_unquoted = urllib2.unquote(self.path.split('/')[2])
+    self.reqtype = self.path.split('/')[1].lower()
+    
+    # Use PID as VLC ID if PID requested
+    # Or torrent url MD5 hash if torrent requested
+    if self.reqtype == 'pid':
+      self.vlcid = self.path_unquoted
+    else:
+      self.vlcid = hashlib.md5(self.path_unquoted).hexdigest()
     
     # Adding client to clientcounter
     clients = AceStuff.clientcounter.add(self.path_unquoted)
@@ -147,7 +155,7 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       if clients == 1:
 	self.ace.aceInit(product_key = AceConfig.acekey, pause_delay = AceConfig.videopausedelay)
 	logger.debug("AceClient inited")
-	self.ace.START(self.path.split('/')[1].lower(), self.path_unquoted)
+	self.ace.START(self.reqtype, self.path_unquoted)
 	logger.debug("START done")
       
       # Getting URL
@@ -159,13 +167,13 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 	if AceConfig.vlcuse:
 	  # Sleeping videodelay
 	  gevent.sleep(AceConfig.videodelay)
-	  AceStuff.vlcclient.startBroadcast(self.path_unquoted, self.url)
+	  AceStuff.vlcclient.startBroadcast(self.vlcid, self.url)
 	  # Sleep a bit, because sometimes VLC doesn't open port in time
 	  gevent.sleep(0.5)
 	
       # Building new VLC url
       if AceConfig.vlcuse:
-	self.url = 'http://' + AceConfig.vlchost + ':' + str(AceConfig.vlcoutport) + '/' + self.path_unquoted
+	self.url = 'http://' + AceConfig.vlchost + ':' + str(AceConfig.vlcoutport) + '/' + self.vlcid
 	logger.debug("VLC url " + self.url)
 	
       # Sending client headers to videostream
@@ -220,7 +228,7 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 	logger.debug("That was the last client, destroying AceClient")
 	if AceConfig.vlcuse:
 	  try:
-	    AceStuff.vlcclient.stopBroadcast(self.path_unquoted)
+	    AceStuff.vlcclient.stopBroadcast(self.vlcid)
 	  except:
 	    pass
 	self.ace = AceStuff.clientcounter.getAce(self.path_unquoted)
