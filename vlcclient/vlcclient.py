@@ -209,7 +209,7 @@ class VlcClient:
 	
       elif VlcMessage.response.STOPERR in self._recvbuffer:
 	# Media unknown (stopping non-existent stream)
-	logger.error("Broadcast does not exists!")
+	logger.error("Broadcast does not exist!")
 	self._result.set(False)
 	
       # Do not move this before error handlers!
