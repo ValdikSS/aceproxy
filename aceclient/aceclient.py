@@ -193,7 +193,7 @@ class AceClient:
 	# If something happened during read, abandon reader
 	# Should not ever happen
 	logger.error("Exception at socket read")
-	
+	return
 	
       # Parsing everything
       if self._recvbuffer.startswith(AceMessage.response.HELLO):
