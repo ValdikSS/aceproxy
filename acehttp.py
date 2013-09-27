@@ -146,7 +146,7 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       # Return 200 and exit
       self.send_response(200)
       self.end_headers()
-      self.wfile.close()
+      self._close_connection()
       return
     
     if clients == 1:
