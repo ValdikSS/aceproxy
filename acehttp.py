@@ -14,14 +14,24 @@ from aceclient.clientcounter import ClientCounter
 
 class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
   
+  def _close_connection(self):
+    '''
+    Disconnecting client
+    '''
+    if self.clientconnected:
+      self.wfile.close()
+      self.rfile.close()
+      self.clientconnected = False
+  
   def die_with_error(self):
     '''
     Close connection with error
     '''
     logging.warning("Dying with error")
-    self.send_error(500)
-    self.end_headers()
-    self.wfile.close()
+    if self.clientconnected:
+      self.send_error(500)
+      self.end_headers()
+      self._close_connection()
     
   def proxyReadWrite(self):
     '''
@@ -51,8 +61,12 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 	      AceStuff.vlcclient.pauseBroadcast(self.vlcid)
 	      self.vlcstate = False
 	    
+	if not self.clientconnected:
+	  logger.debug("Client is not connected, terminating")
+	  return
+	
 	data = self.video.read(4*1024)
-	if data:
+	if data and self.clientconnected:
 	  self.wfile.write(data)
 	else:
 	  # Prevent 100% CPU usage
@@ -60,8 +74,7 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       except:
 	# Video connection dropped
 	logger.debug("Video Connection dropped")
-	self.wfile.close()
-	self.rfile.close()
+	self._close_connection()
 	return
 	
 	
@@ -80,10 +93,10 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     except:
       pass
     finally:
+      self.clientconnected = False
       logger.debug("Client disconnected")
-      self.wfile.close()
-      self.rfile.close()
       try:
+	self.requestgreenlet.kill()
 	self.proxyReadWritegreenlet.kill()
       except:
 	pass
@@ -95,6 +108,8 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     GET request handler
     '''
     logger = logging.getLogger('http_AceHandler')
+    self.clientconnected = True
+    self.requestgreenlet = gevent.getcurrent()
     
     try:
       # If first parameter is 'pid' or 'torrent', and second parameter exists
@@ -210,11 +225,9 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       # Spawning proxyReadWrite greenlet
       self.proxyReadWritegreenlet = gevent.spawn(self.proxyReadWrite)
       
-      # Waiting until proxyReadWrite() ends
-      self.proxyReadWritegreenlet.join()
-      logger.debug("proxyReadWrite joined")
-      self.hanggreenlet.join()
-      logger.debug("hangDetector joined")
+      # Waiting until all greenlets are joined
+      gevent.joinall((self.proxyReadWritegreenlet, self.hanggreenlet))
+      logger.debug("Greenlets joined")
       
     except aceclient.AceException as e:
       logger.error("AceClient exception: " + str(e))
@@ -222,6 +235,9 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     except urllib2.URLError as e:
       logger.error("urllib2 exception: " + str(e))
       self.die_with_error()
+    except gevent.GreenletExit:
+      # hangDetector told us about client disconnection
+      pass
     finally:
       logger.debug("END REQUEST")
       if not AceStuff.clientcounter.delete(self.path_unquoted):
