@@ -200,8 +200,9 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       # Sending client response
       self.send_response(self.video.getcode())
       logger.debug("Response sent")
-      # Sleeping videodelay
-      gevent.sleep(AceConfig.videodelay)
+      if not AceConfig.vlcuse:
+	# Sleeping videodelay
+	gevent.sleep(AceConfig.videodelay)
       logger.debug("Opened url")
       
       self.send_header("Connection", "Close")
