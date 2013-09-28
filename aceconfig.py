@@ -49,7 +49,7 @@ class AceConfig:
   
   # Fake User-Agents (not video players) which generates a lot of requests
   # which Ace stream handles badly. Send them 200 OK and do nothing.
-  fakeuas = ('Mozilla/5.0 IMC plugin Macintosh')
+  fakeuas = ('Mozilla/5.0 IMC plugin Macintosh', )
   # HTTP debug level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
   httpdebug = logging.DEBUG
   
