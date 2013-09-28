@@ -142,10 +142,7 @@ class AceClient:
     self._result = AsyncResult()
     self._urlresult = AsyncResult()
     
-    if datatype.lower() == 'pid':
-      self._write(AceMessage.request.START('PID', {'content_id': value}))
-    elif datatype.lower() == 'torrent':
-      self._write(AceMessage.request.START('TORRENT', {'url': value}))
+    self._write(AceMessage.request.START(datatype.upper(), value))
       
     try:
       if not self._result.get(timeout = self._resulttimeout):

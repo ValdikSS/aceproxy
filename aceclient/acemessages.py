@@ -27,6 +27,8 @@ class AceConst:
 	     5: 'CHECKING',
 	     6: 'ERROR'
 	     }
+  
+  START_TORRENT = ('file_indexes', 'developer_id', 'affiliate_id', 'zone_id', 'stream_id')
 
 
 class AceMessage:

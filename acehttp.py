@@ -113,16 +113,25 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     self.requestgreenlet = gevent.getcurrent()
     
     try:
+      self.splittedpath = self.path.split('/')
       # If first parameter is 'pid' or 'torrent', and second parameter exists
-      if not self.path.split('/')[1].lower() in ('pid', 'torrent') or not self.path.split('/')[2]:
+      if not self.splittedpath[1].lower() in ('pid', 'torrent') or not self.splittedpath[2]:
 	self.die_with_error()
 	return
     except IndexError:
       self.die_with_error()
       return
     
-    self.path_unquoted = urllib2.unquote(self.path.split('/')[2])
-    self.reqtype = self.path.split('/')[1].lower()
+    
+    self.reqtype = self.splittedpath[1].lower()
+    self.path_unquoted = urllib2.unquote(self.splittedpath[2])
+    # Make list with parameters
+    self.params = list()
+    for i in xrange(3,8):
+      try:
+	self.params.append(self.splittedpath[i])
+      except IndexError:
+	self.params.append('0')
     
     # Use PID as VLC ID if PID requested
     # Or torrent url MD5 hash if torrent requested
@@ -172,7 +181,12 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 	self.ace.aceInit(gender = AceConfig.acesex, age = AceConfig.aceage,
 			 product_key = AceConfig.acekey, pause_delay = AceConfig.videopausedelay)
 	logger.debug("AceClient inited")
-	self.ace.START(self.reqtype, self.path_unquoted)
+	if self.reqtype == 'pid':
+	  self.ace.START(self.reqtype, {'content_id' : self.path_unquoted})
+	elif self.reqtype == 'torrent':
+	  self.paramsdict = dict(zip(aceclient.acemessages.AceConst.START_TORRENT, self.params))
+	  self.paramsdict['url'] = self.path_unquoted
+	  self.ace.START(self.reqtype, self.paramsdict)
 	logger.debug("START done")
       
       # Getting URL
