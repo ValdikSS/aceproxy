@@ -7,14 +7,14 @@ import hashlib, platform, urllib2
 class AceConst:
   APIVERSION = 3
   
-  GENDER_LT_13 = 1
-  GENDER_13_17 = 2
-  GENDER_18_24 = 3
-  GENDER_25_34 = 4
-  GENDER_35_44 = 5
-  GENDER_45_54 = 6
-  GENDER_55_64 = 7
-  GENDER_GT_65 = 8
+  AGE_LT_13 = 1
+  AGE_13_17 = 2
+  AGE_18_24 = 3
+  AGE_25_34 = 4
+  AGE_35_44 = 5
+  AGE_45_54 = 6
+  AGE_55_64 = 7
+  AGE_GT_65 = 8
   
   SEX_MALE = 1
   SEX_FEMALE = 2

@@ -104,7 +104,7 @@ class AceClient:
       raise AceException("Write error! " + str(e))
     
     
-  def aceInit(self, gender = AceConst.SEX_MALE, age = AceConst.GENDER_18_24, product_key = None, pause_delay = 0):
+  def aceInit(self, gender = AceConst.SEX_MALE, age = AceConst.AGE_18_24, product_key = None, pause_delay = 0):
     self._product_key = product_key
     self._gender = gender
     self._age = age
