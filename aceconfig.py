@@ -2,6 +2,7 @@
 AceProxy configuration script
 '''
 import logging, platform
+from aceclient.acemessages import AceConst
 
 class AceConfig:
   # Ace program key (None uses remote key generator)
@@ -10,6 +11,10 @@ class AceConfig:
   acehost = '127.0.0.1'
   # Ace Stream Engine port (autodetect for Windows)
   aceport = 62062
+  # Ace Stream age parameter (LT_13, 13_17, 18_24, 25_34, 35_44, 45_54, 55_64, GT_65)
+  aceage = AceConst.AGE_18_24
+  # Ace Stream sex parameter (MALE or FEMALE)
+  acesex = AceConst.SEX_MALE
   # AceClient debug level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
   debug = logging.DEBUG
   

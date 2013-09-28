@@ -169,7 +169,8 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       
       # Initializing AceClient
       if clients == 1:
-	self.ace.aceInit(product_key = AceConfig.acekey, pause_delay = AceConfig.videopausedelay)
+	self.ace.aceInit(gender = AceConfig.acesex, age = AceConfig.aceage,
+			 product_key = AceConfig.acekey, pause_delay = AceConfig.videopausedelay)
 	logger.debug("AceClient inited")
 	self.ace.START(self.reqtype, self.path_unquoted)
 	logger.debug("START done")
