@@ -35,8 +35,13 @@ class AceConfig:
   vlcoutport = 8081
   # VLC password
   vlcpass = 'admin'
-  # VLC muxer
-  vlcmux = 'ts'
+  # VLC muxer. You probably want one of this streamable muxers:
+  # ts, asf, flv, ogg, mkv
+  # You can use ffmpeg muxers too, if your VLC is build with it
+  # ffmpeg{mux=NAME} (i.e. ffmpeg{mux=mpegts})
+  # 
+  # Since VLC's ts muxer is a piece of shit, use ffmpeg's by default
+  vlcmux = 'ffmpeg{mux=mpegts}'
   # VLC debug level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
   vlcdebug = logging.DEBUG
   
