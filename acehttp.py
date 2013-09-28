@@ -74,6 +74,7 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       except:
 	# Video connection dropped
 	logger.debug("Video Connection dropped")
+	self.video.close()
 	self._close_connection()
 	return
 	
