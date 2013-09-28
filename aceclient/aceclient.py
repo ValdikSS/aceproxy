@@ -189,6 +189,7 @@ class AceClient:
       gevent.sleep()
       try:
 	self._recvbuffer = self._socket.read_until("\r\n", 1)
+	self._recvbuffer = self._recvbuffer.strip()
       except:
 	# If something happened during read, abandon reader
 	# Should not ever happen
@@ -254,12 +255,6 @@ class AceClient:
 	  self._urlresult.set_exception(AceException(self._status + ' with message ' + self._recvbuffer.split(';')[2]))
 	elif self._status == 'main:starting':
 	  self._result.set(True)
-	elif self._status == 'main:idle':
-	  # Ace Engine Bug
-	  errmsg = "Ace Engine BUG!"
-	  logger.error(errmsg)
-	  self._result.set_exception(AceException(errmsg))
-	  self._urlresult.set_exception(AceException(errmsg))
 	  
       elif self._recvbuffer.startswith(AceMessage.response.PAUSE):
 	logger.debug("PAUSE event")
