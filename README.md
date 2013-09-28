@@ -13,12 +13,12 @@ Linux
 
 > git clone https://github.com/ValdikSS/aceproxy.git
 
-* Edit aceconfig.py if needed
+* Edit aceconfig.py if needed (i.e. if you want to enable VLC)
 * Start Ace Stream Engine, VLC and acehttp.py
 
 > acestreamengine --client-console
 
-> vlc -I telnet --sout-keep --demux ffmpeg --clock-jitter=0 --network-caching 500 --sout-mux-caching 500
+> vlc -I telnet --clock-jitter=0 --network-caching 500 --sout-mux-caching 500
 
 > python2 acehttp.py
 
@@ -34,7 +34,7 @@ Windows
 
 or download ZIP of it.
 
-* Edit aceconfig.py if needed
-* Start Ace Stream Engine and VLC (with vlc -I telnet --sout-keep --demux ffmpeg --clock-jitter=0 --network-caching 500 --sout-mux-caching 500)
+* Edit aceconfig.py if needed (i.e. if you want to enable VLC)
+* Start Ace Stream Engine and VLC (with vlc -I telnet --clock-jitter=0 --network-caching 500 --sout-mux-caching 500)
 * Start python.exe \path\to\acehttp.py
 * Run any stream with http://localhost:8000/pid/ace-id-goes-here, http://localhost:8000/torrent/http%3A%2F%2Fsite.com%2Fpath%2Ffile.acelive
