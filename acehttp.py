@@ -198,7 +198,7 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 	if AceConfig.vlcuse:
 	  # Sleeping videodelay
 	  gevent.sleep(AceConfig.videodelay)
-	  AceStuff.vlcclient.startBroadcast(self.vlcid, self.url)
+	  AceStuff.vlcclient.startBroadcast(self.vlcid, self.url, AceConfig.vlcmux)
 	  # Sleep a bit, because sometimes VLC doesn't open port in time
 	  gevent.sleep(0.5)
 	

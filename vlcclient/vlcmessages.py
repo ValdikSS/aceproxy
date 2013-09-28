@@ -8,9 +8,9 @@ class VlcMessage:
     
     
     @staticmethod
-    def startBroadcast(stream_name, input, out_port):
-      return 'new "' + stream_name + '" broadcast input "' + input + '" output #http{mux=ts,dst=:' + str(out_port) + '/' + stream_name + '} enabled' + \
-	      "\r\n" + 'control "' + stream_name + '" play'
+    def startBroadcast(stream_name, input, out_port, muxer = 'ts'):
+      return 'new "' + stream_name + '" broadcast input "' + input + '" output #http{mux=' + muxer + ',dst=:' + \
+	str(out_port) + '/' + stream_name + '} enabled' + "\r\n" + 'control "' + stream_name + '" play'
 	    
     @staticmethod    
     def stopBroadcast(stream_name):

@@ -35,6 +35,8 @@ class AceConfig:
   vlcoutport = 8081
   # VLC password
   vlcpass = 'admin'
+  # VLC muxer
+  vlcmux = 'ts'
   # VLC debug level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
   vlcdebug = logging.DEBUG
   
