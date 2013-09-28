@@ -198,7 +198,13 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 	if AceConfig.vlcuse:
 	  # Sleeping videodelay
 	  gevent.sleep(AceConfig.videodelay)
-	  AceStuff.vlcclient.startBroadcast(self.vlcid, self.url, AceConfig.vlcmux)
+	  # Force ffmpeg demuxing if set in config
+	  if AceConfig.vlcforceffmpeg:
+	    self.vlcprefix = 'http/ffmpeg://'
+	  else:
+	    self.vlcprefix = ''
+	    
+	  AceStuff.vlcclient.startBroadcast(self.vlcid, self.vlcprefix + self.url, AceConfig.vlcmux)
 	  # Sleep a bit, because sometimes VLC doesn't open port in time
 	  gevent.sleep(0.5)
 	

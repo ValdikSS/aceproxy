@@ -42,6 +42,8 @@ class AceConfig:
   # 
   # Since VLC's ts muxer is a piece of shit, use ffmpeg's by default
   vlcmux = 'ffmpeg{mux=mpegts}'
+  # Force ffmpeg INPUT demuxer in VLC. Sometimes can help.
+  vlcforceffmpeg = False
   # VLC debug level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
   vlcdebug = logging.DEBUG
   
