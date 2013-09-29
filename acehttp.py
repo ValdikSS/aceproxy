@@ -110,6 +110,7 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     '''
     logger = logging.getLogger('http_AceHandler')
     self.clientconnected = True
+    self.errorhappened = False
     self.requestgreenlet = gevent.getcurrent()
     
     try:
@@ -252,17 +253,19 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       gevent.joinall((self.proxyReadWritegreenlet, self.hanggreenlet))
       logger.debug("Greenlets joined")
       
-    except aceclient.AceException as e:
-      logger.error("AceClient exception: " + str(e))
-      self.die_with_error()
-    except urllib2.URLError as e:
-      logger.error("urllib2 exception: " + str(e))
+    except (aceclient.AceException, urllib2.URLError) as e:
+      logger.error("Exception: " + str(e))
+      self.errorhappened = True
       self.die_with_error()
     except gevent.GreenletExit:
       # hangDetector told us about client disconnection
       pass
     finally:
       logger.debug("END REQUEST")
+      if not self.errorhappened and AceStuff.clientcounter.get(self.path_unquoted) == 1:
+	# If no error happened and we are the only client
+	logger.debug("Sleeping for " + str(AceConfig.videodestroydelay) + " seconds")
+	gevent.sleep(AceConfig.videodestroydelay)
       if not AceStuff.clientcounter.delete(self.path_unquoted):
 	logger.debug("That was the last client, destroying AceClient")
 	if AceConfig.vlcuse:

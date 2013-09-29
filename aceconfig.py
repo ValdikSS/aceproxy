@@ -57,6 +57,8 @@ class AceConfig:
   videoobey = True
   # Stream send delay on PAUSE/RESUME commads (works only if option above is enabled)
   videopausedelay = 3
+  # Wait before closing Ace Stream connection when client disconnects
+  videodestroydelay = 3
   # Pre-buffering timeout
   videotimeout = 40
   # ------------------------
