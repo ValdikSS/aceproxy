@@ -110,7 +110,7 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     '''
     logger = logging.getLogger('http_AceHandler')
     self.clientconnected = True
-    self.errorhappened = False
+    self.errorhappened = True
     self.requestgreenlet = gevent.getcurrent()
     
     try:
@@ -194,6 +194,7 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       if clients == 1:
 	self.url = self.ace.getUrl(AceConfig.videotimeout)
 	logger.debug("Got url " + self.url)
+	self.errorhappened = False
 	
 	# If using VLC, add this url to VLC
 	if AceConfig.vlcuse:
