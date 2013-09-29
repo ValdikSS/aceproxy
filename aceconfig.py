@@ -40,8 +40,8 @@ class AceConfig:
   # You can use ffmpeg muxers too, if your VLC is build with it
   # ffmpeg{mux=NAME} (i.e. ffmpeg{mux=mpegts})
   # 
-  # Since VLC's ts muxer is a piece of shit, use ffmpeg's by default
-  vlcmux = 'ffmpeg{mux=mpegts}'
+  # VLC's ts muxer sometimes can work bad, but that's the best choice for now.
+  vlcmux = 'ts{use-key-frames}'
   # Force ffmpeg INPUT demuxer in VLC. Sometimes can help.
   vlcforceffmpeg = False
   # VLC debug level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
