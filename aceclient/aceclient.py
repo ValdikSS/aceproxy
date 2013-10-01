@@ -247,7 +247,7 @@ class AceClient:
 	  logger.debug("STATUS changed to "+self._status)
 	  
 	if self._status == 'main:err':
-	  logger.warning(self._status + ' with message ' + self._recvbuffer.split(';')[2])
+	  logger.error(self._status + ' with message ' + self._recvbuffer.split(';')[2])
 	  self._result.set_exception(AceException(self._status + ' with message ' + self._recvbuffer.split(';')[2]))
 	  self._urlresult.set_exception(AceException(self._status + ' with message ' + self._recvbuffer.split(';')[2]))
 	elif self._status == 'main:starting':
