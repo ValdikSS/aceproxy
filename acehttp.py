@@ -123,6 +123,14 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       self.die_with_error()
       return
     
+    # Pretend to work fine with Fake UAs
+    if self.headers.get('User-Agent') and self.headers.get('User-Agent') in AceConfig.fakeuas:
+      logger.debug("Got fake UA: " + self.headers.get('User-Agent'))
+      # Return 200 and exit
+      self.send_response(200)
+      self.end_headers()
+      self._close_connection()
+      return
     
     self.reqtype = self.splittedpath[1].lower()
     self.path_unquoted = urllib2.unquote(self.splittedpath[2])
@@ -148,16 +156,6 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     if clients != 1 and not AceConfig.vlcuse:
       AceStuff.clientcounter.delete(self.path_unquoted)
       self.die_with_error()
-      return
-    
-    # Pretend to work fine with Fake UAs
-    if self.headers.get('User-Agent') and self.headers.get('User-Agent') in AceConfig.fakeuas:
-      logger.debug("Got fake UA: " + self.headers.get('User-Agent'))
-      AceStuff.clientcounter.delete(self.path_unquoted)
-      # Return 200 and exit
-      self.send_response(200)
-      self.end_headers()
-      self._close_connection()
       return
     
     if clients == 1:
