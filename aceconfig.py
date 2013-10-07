@@ -35,9 +35,9 @@ class AceConfig:
   vlcoutport = 8081
   # VLC password
   vlcpass = 'admin'
-  # VLC muxer. You probably want one of this streamable muxers:
+  # VLC muxer. You probably want one of these streamable muxers:
   # ts, asf, flv, ogg, mkv
-  # You can use ffmpeg muxers too, if your VLC is build with it
+  # You can use ffmpeg muxers too, if your VLC is built with it
   # ffmpeg{mux=NAME} (i.e. ffmpeg{mux=mpegts})
   # 
   # VLC's ts muxer sometimes can work bad, but that's the best choice for now.
@@ -55,9 +55,9 @@ class AceConfig:
   videodelay = 2
   # Obey PAUSE and RESUME commands (stops sending data to client, should prevent annoying buffering)
   videoobey = True
-  # Stream send delay on PAUSE/RESUME commads (works only if option above is enabled)
+  # Stream send delay after PAUSE/RESUME commands (works only if option above is enabled)
   videopausedelay = 3
-  # Wait before closing Ace Stream connection when client disconnects
+  # Delay before closing Ace Stream connection when client disconnects
   videodestroydelay = 3
   # Pre-buffering timeout
   videotimeout = 40
