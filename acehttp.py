@@ -111,6 +111,7 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     logger = logging.getLogger('http_AceHandler')
     self.clientconnected = True
     self.errorhappened = True
+    self.headerssent = False
     self.requestgreenlet = gevent.getcurrent()
     
     try:
@@ -170,6 +171,16 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 	AceStuff.clientcounter.delete(self.path_unquoted)
 	self.die_with_error()
 	return
+      
+    # Send fake headers if this User-Agent is in fakeheaderuas tuple
+    if self.headers.get('User-Agent') and self.headers.get('User-Agent') in AceConfig.fakeheaderuas:
+      logger.debug("Sending fake headers for " + self.headers.get('User-Agent'))
+      self.send_response(200)
+      self.send_header("Content-Type", "video/mpeg")
+      self.send_header("Connection", "Close")
+      self.end_headers()
+      # Do not send real headers at all
+      self.headerssent = True
     
     try:
       self.hanggreenlet = gevent.spawn(self.hangDetector)
@@ -238,12 +249,12 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 	del self.video.info().dict['keep-alive']
       
       # Sending videostream headers to client
-      for key in self.video.info().dict:
-	self.send_header(key, self.video.info().dict[key])
-      
-      # End headers. Next goes video data
-      self.end_headers()
-      logger.debug("Headers sent")
+      if not self.headerssent:
+	for key in self.video.info().dict:
+	  self.send_header(key, self.video.info().dict[key])
+	# End headers. Next goes video data
+	self.end_headers()
+	logger.debug("Headers sent")
       
       # Spawning proxyReadWrite greenlet
       self.proxyReadWritegreenlet = gevent.spawn(self.proxyReadWrite)

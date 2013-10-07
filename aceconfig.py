@@ -66,6 +66,11 @@ class AceConfig:
   # Fake User-Agents (not video players) which generates a lot of requests
   # which Ace stream handles badly. Send them 200 OK and do nothing.
   fakeuas = ('Mozilla/5.0 IMC plugin Macintosh', )
+  # User-Agents with fast and non-configurable timeout, for which we send
+  # fake headers right after the connection initiated
+  fakeheaderuas = ('HLS Client/2.0 (compatible; LG NetCast.TV-2012)',
+		   'Mozilla/5.0 (DirectFB; Linux armv7l) AppleWebKit/534.26+ (KHTML, like Gecko) Version/5.0 Safari/534.26+ LG Browser/5.00.00(+mouse+3D+SCREEN+TUNER; LGE; 42LM670T-ZA; 04.41.03; 0x00000001;); LG NetCast.TV-2012 0'
+		   )
   # HTTP debug level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
   httpdebug = logging.DEBUG
   
