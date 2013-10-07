@@ -65,7 +65,7 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 	  logger.debug("Client is not connected, terminating")
 	  return
 	
-	data = self.video.read(4*1024)
+	data = self.video.read(4096)
 	if data and self.clientconnected:
 	  self.wfile.write(data)
 	else:
