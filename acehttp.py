@@ -199,8 +199,7 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 	  self.ace.START(self.reqtype, self.paramsdict)
 	logger.debug("START done")
       
-      # Getting URL
-      if clients == 1:
+	# Getting URL
 	self.url = self.ace.getUrl(AceConfig.videotimeout)
 	logger.debug("Got url " + self.url)
 	self.errorhappened = False
