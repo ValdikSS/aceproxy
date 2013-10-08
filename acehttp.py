@@ -110,8 +110,10 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     '''
     logger = logging.getLogger('http_AceHandler')
     self.clientconnected = True
+    # Don't wait videodestroydelay if error happened
     self.errorhappened = True
     self.headerssent = False
+    # Current greenlet
     self.requestgreenlet = gevent.getcurrent()
     
     try:
@@ -129,6 +131,7 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       logger.debug("Got fake UA: " + self.headers.get('User-Agent'))
       # Return 200 and exit
       self.send_response(200)
+      self.send_header("Content-Type", "video/mpeg")
       self.end_headers()
       self._close_connection()
       return
@@ -156,6 +159,7 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     # If we don't use VLC and we're not the first client
     if clients != 1 and not AceConfig.vlcuse:
       AceStuff.clientcounter.delete(self.path_unquoted)
+      logger.error("Not the first client, cannot continue")
       self.die_with_error()
       return
     
@@ -177,7 +181,6 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       logger.debug("Sending fake headers for " + self.headers.get('User-Agent'))
       self.send_response(200)
       self.send_header("Content-Type", "video/mpeg")
-      self.send_header("Connection", "Close")
       self.end_headers()
       # Do not send real headers at all
       self.headerssent = True
@@ -206,13 +209,14 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 	
 	# If using VLC, add this url to VLC
 	if AceConfig.vlcuse:
-	  # Sleeping videodelay
-	  gevent.sleep(AceConfig.videodelay)
 	  # Force ffmpeg demuxing if set in config
 	  if AceConfig.vlcforceffmpeg:
 	    self.vlcprefix = 'http/ffmpeg://'
 	  else:
 	    self.vlcprefix = ''
+	  
+	  # Sleeping videodelay
+	  gevent.sleep(AceConfig.videodelay)
 	    
 	  AceStuff.vlcclient.startBroadcast(self.vlcid, self.vlcprefix + self.url, AceConfig.vlcmux)
 	  # Sleep a bit, because sometimes VLC doesn't open port in time
@@ -229,31 +233,28 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 	self.video.add_header(key, self.headers.dict[key])
 	
       self.video = urllib2.urlopen(self.video)
-      # Sending client response
-      self.send_response(self.video.getcode())
-      logger.debug("Response sent")
-      if not AceConfig.vlcuse:
-	# Sleeping videodelay
-	gevent.sleep(AceConfig.videodelay)
-      logger.debug("Opened url")
-      
-      self.send_header("Connection", "Close")
-      if self.video.info().dict.has_key('connection'):
-	del self.video.info().dict['connection']
-      if self.video.info().dict.has_key('server'):
-	del self.video.info().dict['server']
-      if self.video.info().dict.has_key('transfer-encoding'):
-	del self.video.info().dict['transfer-encoding']  
-      if self.video.info().dict.has_key('keep-alive'):
-	del self.video.info().dict['keep-alive']
       
       # Sending videostream headers to client
       if not self.headerssent:
+	self.send_response(self.video.getcode())
+	if self.video.info().dict.has_key('connection'):
+	  del self.video.info().dict['connection']
+	if self.video.info().dict.has_key('server'):
+	  del self.video.info().dict['server']
+	if self.video.info().dict.has_key('transfer-encoding'):
+	  del self.video.info().dict['transfer-encoding']  
+	if self.video.info().dict.has_key('keep-alive'):
+	  del self.video.info().dict['keep-alive']
+	  
 	for key in self.video.info().dict:
 	  self.send_header(key, self.video.info().dict[key])
 	# End headers. Next goes video data
 	self.end_headers()
 	logger.debug("Headers sent")
+	
+      if not AceConfig.vlcuse:
+	# Sleeping videodelay
+	gevent.sleep(AceConfig.videodelay)
       
       # Spawning proxyReadWrite greenlet
       self.proxyReadWritegreenlet = gevent.spawn(self.proxyReadWrite)
