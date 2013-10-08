@@ -112,6 +112,7 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     self.clientconnected = True
     # Don't wait videodestroydelay if error happened
     self.errorhappened = True
+    # Headers sent flag for fake headers UAs
     self.headerssent = False
     # Current greenlet
     self.requestgreenlet = gevent.getcurrent()
@@ -145,6 +146,16 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 	self.params.append(self.splittedpath[i])
       except IndexError:
 	self.params.append('0')
+	
+    # Adding client to clientcounter
+    clients = AceStuff.clientcounter.add(self.path_unquoted)
+    # If we are the one client, but sucessfully got ace from clientcounter,
+    # then somebody is waiting in the videodestroydelay state
+    self.ace = AceStuff.clientcounter.getAce(self.path_unquoted)
+    if not self.ace:
+      shouldcreateace = True
+    else:
+      shouldcreateace = False
     
     # Use PID as VLC ID if PID requested
     # Or torrent url MD5 hash if torrent requested
@@ -153,17 +164,14 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     else:
       self.vlcid = hashlib.md5(self.path_unquoted).hexdigest()
     
-    # Adding client to clientcounter
-    clients = AceStuff.clientcounter.add(self.path_unquoted)
-    
     # If we don't use VLC and we're not the first client
     if clients != 1 and not AceConfig.vlcuse:
       AceStuff.clientcounter.delete(self.path_unquoted)
-      logger.error("Not the first client, cannot continue")
+      logger.error("Not the first client, cannot continue in non-VLC mode")
       self.die_with_error()
       return
     
-    if clients == 1:
+    if shouldcreateace:
     # If we are the only client, create AceClient
       try:
 	self.ace = aceclient.AceClient(AceConfig.acehost, AceConfig.aceport, debug=AceConfig.debug)
@@ -190,7 +198,7 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       logger.debug("hangDetector spawned")
       
       # Initializing AceClient
-      if clients == 1:
+      if shouldcreateace:
 	self.ace.aceInit(gender = AceConfig.acesex, age = AceConfig.aceage,
 			 product_key = AceConfig.acekey, pause_delay = AceConfig.videopausedelay)
 	logger.debug("AceClient inited")
@@ -202,11 +210,12 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 	  self.ace.START(self.reqtype, self.paramsdict)
 	logger.debug("START done")
       
-	# Getting URL
-	self.url = self.ace.getUrl(AceConfig.videotimeout)
+      # Getting URL
+      self.url = self.ace.getUrl(AceConfig.videotimeout)
+      self.errorhappened = False
+      
+      if shouldcreateace:
 	logger.debug("Got url " + self.url)
-	self.errorhappened = False
-	
 	# If using VLC, add this url to VLC
 	if AceConfig.vlcuse:
 	  # Force ffmpeg demuxing if set in config
@@ -272,21 +281,20 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       pass
     finally:
       logger.debug("END REQUEST")
-      if not self.errorhappened and AceStuff.clientcounter.get(self.path_unquoted) == 1:
+      AceStuff.clientcounter.delete(self.path_unquoted)
+      if not self.errorhappened and not AceStuff.clientcounter.get(self.path_unquoted):
 	# If no error happened and we are the only client
 	logger.debug("Sleeping for " + str(AceConfig.videodestroydelay) + " seconds")
 	gevent.sleep(AceConfig.videodestroydelay)
-      if not AceStuff.clientcounter.delete(self.path_unquoted):
+      if not AceStuff.clientcounter.get(self.path_unquoted):
 	logger.debug("That was the last client, destroying AceClient")
 	if AceConfig.vlcuse:
 	  try:
 	    AceStuff.vlcclient.stopBroadcast(self.vlcid)
 	  except:
 	    pass
-	self.ace = AceStuff.clientcounter.getAce(self.path_unquoted)
-	if self.ace:
-	  self.ace.destroy()
-	  AceStuff.clientcounter.deleteAce(self.path_unquoted)
+	self.ace.destroy()
+	AceStuff.clientcounter.deleteAce(self.path_unquoted)
       
       
 class AceServer(SocketServer.ThreadingMixIn, BaseHTTPServer.HTTPServer):
