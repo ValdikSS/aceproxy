@@ -298,7 +298,9 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       
       
 class HTTPServer(SocketServer.ThreadingMixIn, BaseHTTPServer.HTTPServer):
-  pass
+  def handle_error(self, request, client_address):
+    # Do not print HTTP tracebacks
+    pass
 
 class AceStuff:
   pass
