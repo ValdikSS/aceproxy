@@ -12,7 +12,7 @@ from aceconfig import AceConfig
 import vlcclient
 from aceclient.clientcounter import ClientCounter
 
-class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
   
   def closeConnection(self):
     '''
@@ -108,7 +108,7 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     '''
     GET request handler
     '''
-    logger = logging.getLogger('http_AceHandler')
+    logger = logging.getLogger('http_HTTPHandler')
     self.clientconnected = True
     # Don't wait videodestroydelay if error happened
     self.errorhappened = True
@@ -297,13 +297,13 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 	AceStuff.clientcounter.deleteAce(self.path_unquoted)
       
       
-class AceServer(SocketServer.ThreadingMixIn, BaseHTTPServer.HTTPServer):
+class HTTPServer(SocketServer.ThreadingMixIn, BaseHTTPServer.HTTPServer):
   pass
 
 class AceStuff:
   pass
 
-server = AceServer((AceConfig.httphost, AceConfig.httpport), AceHandler)
+server = HTTPServer((AceConfig.httphost, AceConfig.httpport), HTTPHandler)
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', datefmt='%d.%m.%Y %H:%M:%S', level=AceConfig.httpdebug)
 logger = logging.getLogger('HTTP')
 
