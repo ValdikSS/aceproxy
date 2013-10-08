@@ -14,7 +14,7 @@ from aceclient.clientcounter import ClientCounter
 
 class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
   
-  def _close_connection(self):
+  def closeConnection(self):
     '''
     Disconnecting client
     '''
@@ -23,7 +23,7 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       self.rfile.close()
       self.clientconnected = False
   
-  def die_with_error(self):
+  def dieWithError(self):
     '''
     Close connection with error
     '''
@@ -31,7 +31,7 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     if self.clientconnected:
       self.send_error(500)
       self.end_headers()
-      self._close_connection()
+      self.closeConnection()
     
   def proxyReadWrite(self):
     '''
@@ -75,7 +75,7 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 	# Video connection dropped
 	logger.debug("Video Connection dropped")
 	self.video.close()
-	self._close_connection()
+	self.closeConnection()
 	return
 	
 	
@@ -121,10 +121,10 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       self.splittedpath = self.path.split('/')
       # If first parameter is 'pid' or 'torrent', and second parameter exists
       if not self.splittedpath[1].lower() in ('pid', 'torrent') or not self.splittedpath[2]:
-	self.die_with_error()
+	self.dieWithError()
 	return
     except IndexError:
-      self.die_with_error()
+      self.dieWithError()
       return
     
     # Pretend to work fine with Fake UAs
@@ -134,7 +134,7 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       self.send_response(200)
       self.send_header("Content-Type", "video/mpeg")
       self.end_headers()
-      self._close_connection()
+      self.closeConnection()
       return
     
     self.reqtype = self.splittedpath[1].lower()
@@ -168,7 +168,7 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     if clients != 1 and not AceConfig.vlcuse:
       AceStuff.clientcounter.delete(self.path_unquoted)
       logger.error("Not the first client, cannot continue in non-VLC mode")
-      self.die_with_error()
+      self.dieWithError()
       return
     
     if shouldcreateace:
@@ -181,7 +181,7 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       except aceclient.AceException as e:
 	logger.error("AceClient create exception. ERROR: " + str(e))
 	AceStuff.clientcounter.delete(self.path_unquoted)
-	self.die_with_error()
+	self.dieWithError()
 	return
       
     # Send fake headers if this User-Agent is in fakeheaderuas tuple
@@ -275,7 +275,7 @@ class AceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     except (aceclient.AceException, urllib2.URLError) as e:
       logger.error("Exception: " + str(e))
       self.errorhappened = True
-      self.die_with_error()
+      self.dieWithError()
     except gevent.GreenletExit:
       # hangDetector told us about client disconnection
       pass
