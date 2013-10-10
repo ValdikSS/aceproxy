@@ -11,6 +11,8 @@ import gevent.queue, logging, aceclient, BaseHTTPServer, SocketServer, urllib2, 
 from aceconfig import AceConfig
 import vlcclient
 from aceclient.clientcounter import ClientCounter
+import glob, os.path, sys
+from plugins.PluginInterface import AceProxyPlugin
 
 class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
   
@@ -119,10 +121,29 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     
     try:
       self.splittedpath = self.path.split('/')
-      # If first parameter is 'pid' or 'torrent', and second parameter exists
-      if not self.splittedpath[1].lower() in ('pid', 'torrent') or not self.splittedpath[2]:
+      self.reqtype = self.splittedpath[1].lower()
+      # If first parameter is 'pid' or 'torrent' or it should be handled by plugin
+      if not (self.reqtype in ('pid', 'torrent') or self.reqtype in AceStuff.pluginshandlers):
 	self.dieWithError()
 	return
+    except IndexError:
+      self.dieWithError()
+      return
+    
+    # Handle request with plugin handler
+    if self.reqtype in AceStuff.pluginshandlers:
+      try:
+	AceStuff.pluginshandlers.get(self.reqtype).handle(self)
+      except Exception as e:
+	logger.error('Plugin exception: ' + repr(e))
+	self.dieWithError()
+      finally:
+	self.closeConnection()
+	return
+    
+    # Check if second parameter exists
+    try:
+      self.splittedpath[2]
     except IndexError:
       self.dieWithError()
       return
@@ -137,7 +158,6 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       self.closeConnection()
       return
     
-    self.reqtype = self.splittedpath[1].lower()
     self.path_unquoted = urllib2.unquote(self.splittedpath[2])
     # Make list with parameters
     self.params = list()
@@ -305,8 +325,32 @@ class HTTPServer(SocketServer.ThreadingMixIn, BaseHTTPServer.HTTPServer):
 class AceStuff(object):
   pass
 
-server = HTTPServer((AceConfig.httphost, AceConfig.httpport), HTTPHandler)
+
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', datefmt='%d.%m.%Y %H:%M:%S', level=AceConfig.httpdebug)
+logger = logging.getLogger('INIT')
+
+# Loading plugins
+# Creating dict of handlers
+AceStuff.pluginshandlers = dict()
+# And a list with plugin instances
+AceStuff.pluginlist = list()
+pluginsmatch = glob.glob('plugins/*_plugin.py')
+sys.path.insert( 0, 'plugins')
+pluginslist = [os.path.splitext(os.path.basename(x))[0] for x in pluginsmatch]
+for i in pluginslist:
+  plugin = __import__(i)
+  plugname = i.split('_')[0].capitalize()
+  try:
+    plugininstance = getattr(plugin, plugname)()
+  except Exception as e:
+    logger.error("Cannot load plugin " + plugname + ": " + repr(e))
+    continue
+  logger.debug('Plugin loaded: ' + plugname)
+  for j in plugininstance.handlers:
+    AceStuff.pluginshandlers[j] = plugininstance
+  AceStuff.pluginlist.append(plugininstance)
+
+server = HTTPServer((AceConfig.httphost, AceConfig.httpport), HTTPHandler)
 logger = logging.getLogger('HTTP')
 
 # Creating ClientCounter
@@ -329,3 +373,5 @@ except KeyboardInterrupt:
   logger.info("Stopping server...")
   server.shutdown()
   server.server_close()
+  for i in AceStuff.pluginlist:
+    del i
