@@ -59,7 +59,7 @@ class AceClient(object):
       self._socket = telnetlib.Telnet(host, port, connect_timeout)
       logger.info("Successfully connected with Ace!")
     except Exception as e:
-      raise AceException("Socket creation error! Ace is not running? " + str(e))
+      raise AceException("Socket creation error! Ace is not running? " + repr(e))
     
     # Spawning recvData greenlet
     gevent.spawn(self._recvData)
@@ -101,7 +101,7 @@ class AceClient(object):
     try:
       self._socket.write(message + "\r\n")
     except EOFError as e:
-      raise AceException("Write error! " + str(e))
+      raise AceException("Write error! " + repr(e))
     
     
   def aceInit(self, gender = AceConst.SEX_MALE, age = AceConst.AGE_18_24, product_key = None, pause_delay = 0):

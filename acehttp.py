@@ -179,7 +179,7 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 	AceStuff.clientcounter.addAce(self.path_unquoted, self.ace)
 	logger.debug("AceClient created")
       except aceclient.AceException as e:
-	logger.error("AceClient create exception. ERROR: " + str(e))
+	logger.error("AceClient create exception: " + repr(e))
 	AceStuff.clientcounter.delete(self.path_unquoted)
 	self.dieWithError()
 	return
@@ -273,7 +273,7 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       logger.debug("Greenlets joined")
       
     except (aceclient.AceException, urllib2.URLError) as e:
-      logger.error("Exception: " + str(e))
+      logger.error("Exception: " + repr(e))
       self.errorhappened = True
       self.dieWithError()
     except gevent.GreenletExit:

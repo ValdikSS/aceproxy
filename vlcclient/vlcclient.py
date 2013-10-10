@@ -58,7 +58,7 @@ class VlcClient(object):
       self._socket = telnetlib.Telnet(host, port, connect_timeout)
       logger.debug("Successfully connected with VLC socket!")
     except Exception as e:
-      raise VlcException("Socket creation error! VLC is not running? ERROR: " + str(e))
+      raise VlcException("Socket creation error! VLC is not running? ERROR: " + repr(e))
     
     # Spawning recvData greenlet
     gevent.spawn(self._recvData)
@@ -110,7 +110,7 @@ class VlcClient(object):
       # Write message
       self._socket.write(message + "\r\n")
     except EOFError as e:
-      raise VlcException("Vlc Write error! ERROR: " + str(e))
+      raise VlcException("Vlc Write error! ERROR: " + repr(e))
     
     
   def _broadcast(self, brtype, stream_name, input = None, muxer = 'ts'):
