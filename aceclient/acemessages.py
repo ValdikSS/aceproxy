@@ -4,7 +4,7 @@ Minimal Ace Stream client library to use with HTTP Proxy
 
 import hashlib, platform, urllib2
 
-class AceConst:
+class AceConst(object):
   APIVERSION = 3
   
   AGE_LT_13 = 1
@@ -31,8 +31,8 @@ class AceConst:
   START_TORRENT = ('file_indexes', 'developer_id', 'affiliate_id', 'zone_id', 'stream_id')
 
 
-class AceMessage:
-  class request:
+class AceMessage(object):
+  class request(object):
     # Requests (from client to acestream)
      # API Version
     HELLO = 'HELLOBG version=' + str(AceConst.APIVERSION) # Hello
@@ -125,7 +125,7 @@ class AceMessage:
       return 'USERDATA [{"gender": ' + str(gender) + '}, {"age": '+ str(age) + '}]'
   
   
-  class response:
+  class response(object):
     # Responses (from acestream to client)
     HELLO =		'HELLOTS' # Just the beginning
     NOTREADY =		'NOTREADY'

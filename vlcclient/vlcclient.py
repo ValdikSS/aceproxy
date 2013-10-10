@@ -22,7 +22,7 @@ class VlcException(Exception):
     return repr(self.val)
 
 
-class VlcClient:
+class VlcClient(object):
   '''
   VLC Client class
   '''

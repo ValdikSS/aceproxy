@@ -4,7 +4,7 @@ AceProxy configuration script
 import logging, platform
 from aceclient.acemessages import AceConst
 
-class AceConfig:
+class AceConfig(object):
   # Ace program key (None uses remote key generator)
   acekey = None
   # Ace Stream Engine host

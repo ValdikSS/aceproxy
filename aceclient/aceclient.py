@@ -20,7 +20,7 @@ class AceException(Exception):
     return repr(self.val)
 
 
-class AceClient:
+class AceClient(object):
   def __init__(self, host, port, connect_timeout = 5, result_timeout = 5, debug = logging.ERROR):
     # Receive buffer
     self._recvbuffer = None

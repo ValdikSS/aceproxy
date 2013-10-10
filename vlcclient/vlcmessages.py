@@ -2,8 +2,8 @@
 Minimal VLC client for AceProxy. Messages class.
 '''
 
-class VlcMessage:
-  class request:
+class VlcMessage(object):
+  class request(object):
     SHUTDOWN = 'shutdown'
     
     
@@ -24,7 +24,7 @@ class VlcMessage:
     def unPauseBroadcast(stream_name):
       return 'control "' + stream_name + '" play'
     
-  class response:
+  class response(object):
     WRONGPASS = 'Wrong password'
     AUTHOK = 'Welcome, Master'
     BROADCASTEXISTS = 'Name already in use'

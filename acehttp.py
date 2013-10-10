@@ -302,7 +302,7 @@ class HTTPServer(SocketServer.ThreadingMixIn, BaseHTTPServer.HTTPServer):
     # Do not print HTTP tracebacks
     pass
 
-class AceStuff:
+class AceStuff(object):
   pass
 
 server = HTTPServer((AceConfig.httphost, AceConfig.httpport), HTTPHandler)

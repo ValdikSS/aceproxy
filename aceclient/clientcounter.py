@@ -2,7 +2,7 @@
 Simple Client Counter for VLC VLM
 '''
 
-class ClientCounter:
+class ClientCounter(object):
   def __init__(self):
     self.clients = dict()
     self.aces = dict()
