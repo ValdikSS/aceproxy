@@ -320,7 +320,10 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 class HTTPServer(SocketServer.ThreadingMixIn, BaseHTTPServer.HTTPServer):
   def handle_error(self, request, client_address):
     # Do not print HTTP tracebacks
-    pass
+    try:
+      pass
+    except Exception as e:
+      print repr(e)
 
 class AceStuff(object):
   pass
@@ -362,7 +365,7 @@ if AceConfig.vlcuse:
     AceStuff.vlcclient = vlcclient.VlcClient(host = AceConfig.vlchost, port = AceConfig.vlcport, password = AceConfig.vlcpass,
 				    out_port = AceConfig.vlcoutport ,debug = AceConfig.vlcdebug)
   except vlcclient.VlcException as e:
-    print e
+    print repr(e)
     quit()
 
 
