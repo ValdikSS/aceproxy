@@ -304,7 +304,6 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     finally:
       logger.debug("END REQUEST")
       AceStuff.clientcounter.delete(self.path_unquoted, self.clientip)
-      print 'aa'
       if not self.errorhappened and not AceStuff.clientcounter.get(self.path_unquoted):
 	# If no error happened and we are the only client
 	logger.debug("Sleeping for " + str(AceConfig.videodestroydelay) + " seconds")
