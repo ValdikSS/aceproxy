@@ -150,6 +150,12 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       self.dieWithError(400) # 400 Bad Request
       return
     
+    # Limit concurrent connections
+    if AceStuff.clientcounter.total >= AceConfig.maxconns:
+      self.dieWithError(503) # 503 Service Unavailable
+      return
+    
+    
     # Pretend to work fine with Fake UAs
     if self.headers.get('User-Agent') and self.headers.get('User-Agent') in AceConfig.fakeuas:
       logger.debug("Got fake UA: " + self.headers.get('User-Agent'))

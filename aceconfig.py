@@ -22,6 +22,8 @@ class AceConfig(object):
   httphost = '0.0.0.0'
   # HTTP Server port
   httpport = 8000
+  # Maximum concurrent connections (video clients)
+  maxconns = 10
   
   # Enable VLC or not
   # I strongly recommend to use VLC, because it lags a lot without it
