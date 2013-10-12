@@ -204,6 +204,8 @@ class AceClient(object):
       elif self._recvbuffer.startswith(AceMessage.response.NOTREADY):
 	# NOTREADY
 	logger.error("Ace is not ready. Wrong auth?")
+	self._auth = False
+	self._authevent.set()
 	return
       
       elif self._recvbuffer.startswith(AceMessage.response.START):
