@@ -186,9 +186,9 @@ class AceClient(object):
 	self._recvbuffer = self._socket.read_until("\r\n", 1)
 	self._recvbuffer = self._recvbuffer.strip()
       except:
-	# If something happened during read, abandon reader
-	# Should not ever happen
-	logger.error("Exception at socket read")
+	# If something happened during read, abandon reader.
+	if not self._shuttingDown.isSet():
+	  logger.error("Exception at socket read")
 	return
 	
       # Parsing everything
