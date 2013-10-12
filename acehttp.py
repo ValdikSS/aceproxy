@@ -11,7 +11,7 @@ import gevent.queue, logging, aceclient, BaseHTTPServer, SocketServer, urllib2, 
 from aceconfig import AceConfig
 import vlcclient
 from aceclient.clientcounter import ClientCounter
-import glob, os.path, sys
+import glob, os, sys
 from plugins.PluginInterface import AceProxyPlugin
 
 class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
@@ -333,6 +333,7 @@ logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', da
 logger = logging.getLogger('INIT')
 
 # Loading plugins
+os.chdir(os.path.dirname(os.path.realpath(__file__)))
 # Creating dict of handlers
 AceStuff.pluginshandlers = dict()
 # And a list with plugin instances
