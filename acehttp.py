@@ -126,10 +126,10 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       self.reqtype = self.splittedpath[1].lower()
       # If first parameter is 'pid' or 'torrent' or it should be handled by plugin
       if not (self.reqtype in ('pid', 'torrent') or self.reqtype in AceStuff.pluginshandlers):
-	self.dieWithError()
+	self.dieWithError(400) # 400 Bad Request
 	return
     except IndexError:
-      self.dieWithError()
+      self.dieWithError(400) # 400 Bad Request
       return
     
     # Handle request with plugin handler
@@ -147,7 +147,7 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     try:
       self.splittedpath[2]
     except IndexError:
-      self.dieWithError()
+      self.dieWithError(400) # 400 Bad Request
       return
     
     # Pretend to work fine with Fake UAs
@@ -190,7 +190,7 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     if clients != 1 and not AceConfig.vlcuse:
       AceStuff.clientcounter.delete(self.path_unquoted, self.clientip)
       logger.error("Not the first client, cannot continue in non-VLC mode")
-      self.dieWithError()
+      self.dieWithError(503) # 503 Service Unavailable
       return
     
     if shouldcreateace:
@@ -203,7 +203,7 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       except aceclient.AceException as e:
 	logger.error("AceClient create exception: " + repr(e))
 	AceStuff.clientcounter.delete(self.path_unquoted, self.clientip)
-	self.dieWithError()
+	self.dieWithError(502) # 502 Bad Gateway
 	return
       
     # Send fake headers if this User-Agent is in fakeheaderuas tuple
