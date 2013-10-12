@@ -189,6 +189,7 @@ class AceClient(object):
 	# If something happened during read, abandon reader.
 	if not self._shuttingDown.isSet():
 	  logger.error("Exception at socket read")
+	  self._shuttingDown.set()
 	return
 	
       # Parsing everything

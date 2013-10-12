@@ -176,6 +176,7 @@ class VlcClient(object):
 	# If something happened during read, abandon reader
 	# Should not ever happen
 	logger.error("Exception at socket read")
+	self._shuttingDown.set()
 	return
       
       # Parsing everything
