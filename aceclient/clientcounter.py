@@ -6,29 +6,34 @@ class ClientCounter(object):
   def __init__(self):
     self.clients = dict()
     self.aces = dict()
+    self.total = 0
     
   def get(self, id):
-    return self.clients.get(id, False)
+    return self.clients.get(id, (False,))[0]
     
-  def add(self, id):
+  def add(self, id, ip):
     if self.clients.has_key(id):
-      self.clients[id] += 1
+      self.clients[id][0] += 1
+      self.clients[id][1].append(ip)
     else:
-      self.clients[id] = 1
+      self.clients[id] = [1, [ip]]
       
-    return self.clients[id]
+    self.total += 1
+    return self.clients[id][0]
   
-  def delete(self, id):
+  def delete(self, id, ip):
     if self.clients.has_key(id):
-      if self.clients[id] == 1:
+      self.total -= 1
+      if self.clients[id][0] == 1:
 	del self.clients[id]
 	return False
       else:
-	self.clients[id] -= 1
+	self.clients[id][0] -= 1
+	self.clients[id][1].remove(ip)
     else:
       return False
 	
-    return self.clients[id]
+    return self.clients[id][0]
   
   def getAce(self, id):
     return self.aces.get(id, False)

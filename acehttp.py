@@ -118,6 +118,8 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     self.headerssent = False
     # Current greenlet
     self.requestgreenlet = gevent.getcurrent()
+    # Connected client IP address
+    self.clientip = self.request.getpeername()[0]
     
     try:
       self.splittedpath = self.path.split('/')
@@ -168,7 +170,7 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 	self.params.append('0')
 	
     # Adding client to clientcounter
-    clients = AceStuff.clientcounter.add(self.path_unquoted)
+    clients = AceStuff.clientcounter.add(self.path_unquoted, self.clientip)
     # If we are the one client, but sucessfully got ace from clientcounter,
     # then somebody is waiting in the videodestroydelay state
     self.ace = AceStuff.clientcounter.getAce(self.path_unquoted)
@@ -186,7 +188,7 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     
     # If we don't use VLC and we're not the first client
     if clients != 1 and not AceConfig.vlcuse:
-      AceStuff.clientcounter.delete(self.path_unquoted)
+      AceStuff.clientcounter.delete(self.path_unquoted, self.clientip)
       logger.error("Not the first client, cannot continue in non-VLC mode")
       self.dieWithError()
       return
@@ -200,7 +202,7 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 	logger.debug("AceClient created")
       except aceclient.AceException as e:
 	logger.error("AceClient create exception: " + repr(e))
-	AceStuff.clientcounter.delete(self.path_unquoted)
+	AceStuff.clientcounter.delete(self.path_unquoted, self.clientip)
 	self.dieWithError()
 	return
       
@@ -301,7 +303,8 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       pass
     finally:
       logger.debug("END REQUEST")
-      AceStuff.clientcounter.delete(self.path_unquoted)
+      AceStuff.clientcounter.delete(self.path_unquoted, self.clientip)
+      print 'aa'
       if not self.errorhappened and not AceStuff.clientcounter.get(self.path_unquoted):
 	# If no error happened and we are the only client
 	logger.debug("Sleeping for " + str(AceConfig.videodestroydelay) + " seconds")
@@ -318,12 +321,12 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       
       
 class HTTPServer(SocketServer.ThreadingMixIn, BaseHTTPServer.HTTPServer):
-  def handle_error(self, request, client_address):
+  #def handle_error(self, request, client_address):
     # Do not print HTTP tracebacks
-    try:
+    #try:
       pass
-    except Exception as e:
-      print repr(e)
+    #except Exception as e:
+    #  print repr(e)
 
 class AceStuff(object):
   pass
