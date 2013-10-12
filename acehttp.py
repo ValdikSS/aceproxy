@@ -345,7 +345,7 @@ for i in pluginslist:
   plugin = __import__(i)
   plugname = i.split('_')[0].capitalize()
   try:
-    plugininstance = getattr(plugin, plugname)()
+    plugininstance = getattr(plugin, plugname)(AceConfig, AceStuff)
   except Exception as e:
     logger.error("Cannot load plugin " + plugname + ": " + repr(e))
     continue

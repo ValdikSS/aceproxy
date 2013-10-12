@@ -9,7 +9,7 @@ from PluginInterface import AceProxyPlugin
 class Helloworld(AceProxyPlugin):
   handlers = ('helloworld', )
   
-  def __init__(self):
+  def __init__(self, AceConfig, AceStuff):
     pass
     
   def handle(self, connection):
