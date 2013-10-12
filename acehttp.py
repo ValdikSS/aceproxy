@@ -152,6 +152,7 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     
     # Limit concurrent connections
     if AceConfig.maxconns > 0 and AceStuff.clientcounter.total >= AceConfig.maxconns:
+      logger.debug("Maximum connections reached, can't serve this")
       self.dieWithError(503) # 503 Service Unavailable
       return
     
