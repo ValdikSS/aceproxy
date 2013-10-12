@@ -25,13 +25,13 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       self.rfile.close()
       self.clientconnected = False
   
-  def dieWithError(self):
+  def dieWithError(self, errorcode = 500):
     '''
     Close connection with error
     '''
     logging.warning("Dying with error")
     if self.clientconnected:
-      self.send_error(500)
+      self.send_error(errorcode)
       self.end_headers()
       self.closeConnection()
     
