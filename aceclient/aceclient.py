@@ -88,6 +88,7 @@ class AceClient(object):
       logger.debug("Destroying client...")
       self._shuttingDown.set()
       self._write(AceMessage.request.SHUTDOWN)
+      self._socket.close()
     except:
       # Ignore exceptions on destroy
       pass
