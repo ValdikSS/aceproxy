@@ -16,7 +16,9 @@ class Stat(AceProxyPlugin):
     connection.send_response(200)
     connection.send_header('Content-type', 'text/html')
     connection.end_headers()
-    connection.wfile.write('<html><body><h4>Connected clients: ' + str(sum(self.stuff.clientcounter.clients.values())) + '</h4>')
+    connection.wfile.write('<html><body><h4>Connected clients: ' + str(self.stuff.clientcounter.total) + '</h4>')
     for i in self.stuff.clientcounter.clients:
-      connection.wfile.write(str(i) + ' : ' + str(self.stuff.clientcounter.clients[i]) + '<br>')
+      connection.wfile.write(str(i) + ' : ' + str(self.stuff.clientcounter.clients[i][0]) + ' ' + \
+			    str(self.stuff.clientcounter.clients[i][1]) + '<br>')
     connection.wfile.write('</body></html>')
+    
