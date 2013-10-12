@@ -321,12 +321,12 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       
       
 class HTTPServer(SocketServer.ThreadingMixIn, BaseHTTPServer.HTTPServer):
-  #def handle_error(self, request, client_address):
+  def handle_error(self, request, client_address):
     # Do not print HTTP tracebacks
-    #try:
+    try:
       pass
-    #except Exception as e:
-    #  print repr(e)
+    except Exception as e:
+      print repr(e)
 
 class AceStuff(object):
   pass
