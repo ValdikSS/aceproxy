@@ -9,9 +9,11 @@ Do not use dots in filename or class name.
 See helloworld_plugin_.py for the basic plugin example.
 '''
 
+
 class AceProxyPlugin(object):
-  def __init__(self, AceConfig, AceStuff):
-    pass
-  
-  def handle(self, connection):
-    raise NotImplementedError
+
+    def __init__(self, AceConfig, AceStuff):
+        pass
+
+    def handle(self, connection):
+        raise NotImplementedError
