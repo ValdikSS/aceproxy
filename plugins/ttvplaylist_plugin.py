@@ -15,6 +15,7 @@ class Ttvplaylist(AceProxyPlugin):
 
     logger = logging.getLogger('plugin_ttvplaylist')
     url = ttvplaylist_config.url
+    host = ttvplaylist_config.host
     playlist = None
     playlisttime = None
 
@@ -36,8 +37,12 @@ class Ttvplaylist(AceProxyPlugin):
                 connection.dieWithError()
                 return
 
+        if Ttvplaylist.host:
+            hostport = Ttvplaylist.host + ':' + str(connection.request.getsockname()[1])
+        else:
+            hostport = connection.request.getsockname()[0] + ':' + str(connection.request.getsockname()[1])
+
         connection.send_response(200)
         connection.send_header('Content-type', 'application/x-mpegurl')
         connection.end_headers()
-        connection.wfile.write(re.sub('([0-9a-f]{40})', 'http://' + connection.request.getsockname()[0] + ':' +
-                                      str(connection.request.getsockname()[1]) + '/pid/\\1', Ttvplaylist.playlist))
+        connection.wfile.write(re.sub('([0-9a-f]{40})', 'http://' + hostport + '/pid/\\1', Ttvplaylist.playlist))
