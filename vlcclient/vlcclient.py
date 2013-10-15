@@ -175,46 +175,47 @@ class VlcClient(object):
                 self._shuttingDown.set()
                 return
 
-            # Parsing everything
-            if not self._vlcver:
-                # First line (VLC version)
-                self._vlcver = self._recvbuffer.strip()
-                # Send password here since PASSWORD doesn't have \n
-                self._write(self._password)
+            # Parsing everything only if the string is not empty
+            if self._recvbuffer:
+                if not self._vlcver:
+                    # First line (VLC version)
+                    self._vlcver = self._recvbuffer.strip()
+                    # Send password here since PASSWORD doesn't have \n
+                    self._write(self._password)
 
-            elif self._recvbuffer.startswith(VlcMessage.response.SHUTDOWN):
-                # Exit from this loop
-                logger.debug("Got SHUTDOWN from VLC")
-                return
+                elif self._recvbuffer.startswith(VlcMessage.response.SHUTDOWN):
+                    # Exit from this loop
+                    logger.debug("Got SHUTDOWN from VLC")
+                    return
 
-            elif self._recvbuffer.startswith(VlcMessage.response.WRONGPASS):
-                # Wrong password
-                logger.error("Wrong VLC password!")
-                self._auth.set(False)
-                return
+                elif self._recvbuffer.startswith(VlcMessage.response.WRONGPASS):
+                    # Wrong password
+                    logger.error("Wrong VLC password!")
+                    self._auth.set(False)
+                    return
 
-            elif self._recvbuffer.startswith(VlcMessage.response.AUTHOK):
-                # Authentication OK
-                logger.info("Authentication successful")
-                self._auth.set(True)
+                elif self._recvbuffer.startswith(VlcMessage.response.AUTHOK):
+                    # Authentication OK
+                    logger.info("Authentication successful")
+                    self._auth.set(True)
 
-            elif VlcMessage.response.BROADCASTEXISTS in self._recvbuffer:
-                # Broadcast already exists
-                logger.error("Broadcast already exists!")
-                self._result.set(False)
+                elif VlcMessage.response.BROADCASTEXISTS in self._recvbuffer:
+                    # Broadcast already exists
+                    logger.error("Broadcast already exists!")
+                    self._result.set(False)
 
-            elif VlcMessage.response.STOPERR in self._recvbuffer:
-                # Media unknown (stopping non-existent stream)
-                logger.error("Broadcast does not exist!")
-                self._result.set(False)
+                elif VlcMessage.response.STOPERR in self._recvbuffer:
+                    # Media unknown (stopping non-existent stream)
+                    logger.error("Broadcast does not exist!")
+                    self._result.set(False)
 
-            # Do not move this before error handlers!
-            elif self._recvbuffer.startswith(VlcMessage.response.STARTOK):
-                # Broadcast started
-                logger.debug("Broadcast started")
-                self._result.set(True)
+                # Do not move this before error handlers!
+                elif self._recvbuffer.startswith(VlcMessage.response.STARTOK):
+                    # Broadcast started
+                    logger.debug("Broadcast started")
+                    self._result.set(True)
 
-            elif self._recvbuffer.startswith(VlcMessage.response.STOPOK):
-                # Broadcast stopped
-                logger.debug("Broadcast stopped")
-                self._result.set(True)
+                elif self._recvbuffer.startswith(VlcMessage.response.STOPOK):
+                    # Broadcast stopped
+                    logger.debug("Broadcast stopped")
+                    self._result.set(True)

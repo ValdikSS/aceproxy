@@ -183,79 +183,80 @@ class AceClient(object):
                     self._shuttingDown.set()
                 return
 
-            # Parsing everything
-            if self._recvbuffer.startswith(AceMessage.response.HELLO):
-                # Parse HELLO
-                if 'key=' in self._recvbuffer:
-                    self._request_key = self._recvbuffer.split()[
-                        2].split('=')[1]
-                    self._write(AceMessage.request.READY_key(
-                        self._request_key, self._product_key))
-                    self._request_key = None
-                else:
-                    self._write(AceMessage.request.READY_nokey)
+            if self._recvbuffer:
+                # Parsing everything only if the string is not empty
+                if self._recvbuffer.startswith(AceMessage.response.HELLO):
+                    # Parse HELLO
+                    if 'key=' in self._recvbuffer:
+                        self._request_key = self._recvbuffer.split()[
+                            2].split('=')[1]
+                        self._write(AceMessage.request.READY_key(
+                            self._request_key, self._product_key))
+                        self._request_key = None
+                    else:
+                        self._write(AceMessage.request.READY_nokey)
 
-            elif self._recvbuffer.startswith(AceMessage.response.NOTREADY):
-                # NOTREADY
-                logger.error("Ace is not ready. Wrong auth?")
-                self._auth = False
-                self._authevent.set()
-                return
+                elif self._recvbuffer.startswith(AceMessage.response.NOTREADY):
+                    # NOTREADY
+                    logger.error("Ace is not ready. Wrong auth?")
+                    self._auth = False
+                    self._authevent.set()
+                    return
 
-            elif self._recvbuffer.startswith(AceMessage.response.START):
-                # START
-                try:
-                    self._url = self._recvbuffer.split()[1]
-                    self._urlresult.set(self._url)
-                    self._resumeevent.set()
-                except IndexError as e:
-                    self._url = None
+                elif self._recvbuffer.startswith(AceMessage.response.START):
+                    # START
+                    try:
+                        self._url = self._recvbuffer.split()[1]
+                        self._urlresult.set(self._url)
+                        self._resumeevent.set()
+                    except IndexError as e:
+                        self._url = None
 
-            elif self._recvbuffer.startswith(AceMessage.response.STOP):
-                pass
-
-            elif self._recvbuffer.startswith(AceMessage.response.SHUTDOWN):
-                logger.debug("Got SHUTDOWN from engine")
-                self._socket.close()
-                return
-
-            elif self._recvbuffer.startswith(AceMessage.response.AUTH):
-                try:
-                    self._auth = self._recvbuffer.split()[1]
-                    # Send USERDATA here
-                    self._write(
-                        AceMessage.request.USERDATA(self._gender, self._age))
-                except:
+                elif self._recvbuffer.startswith(AceMessage.response.STOP):
                     pass
-                self._authevent.set()
 
-            elif self._recvbuffer.startswith(AceMessage.response.GETUSERDATA):
-                raise AceException("You should init me first!")
+                elif self._recvbuffer.startswith(AceMessage.response.SHUTDOWN):
+                    logger.debug("Got SHUTDOWN from engine")
+                    self._socket.close()
+                    return
 
-            elif self._recvbuffer.startswith(AceMessage.response.STATE):
-                self._state = self._recvbuffer.split()[1]
+                elif self._recvbuffer.startswith(AceMessage.response.AUTH):
+                    try:
+                        self._auth = self._recvbuffer.split()[1]
+                        # Send USERDATA here
+                        self._write(
+                            AceMessage.request.USERDATA(self._gender, self._age))
+                    except:
+                        pass
+                    self._authevent.set()
 
-            elif self._recvbuffer.startswith(AceMessage.response.STATUS):
-                self._tempstatus = self._recvbuffer.split()[1].split(';')[0]
-                if self._tempstatus != self._status:
-                    self._status = self._tempstatus
-                    logger.debug("STATUS changed to " + self._status)
+                elif self._recvbuffer.startswith(AceMessage.response.GETUSERDATA):
+                    raise AceException("You should init me first!")
 
-                if self._status == 'main:err':
-                    logger.error(
-                        self._status + ' with message ' + self._recvbuffer.split(';')[2])
-                    self._result.set_exception(
-                        AceException(self._status + ' with message ' + self._recvbuffer.split(';')[2]))
-                    self._urlresult.set_exception(
-                        AceException(self._status + ' with message ' + self._recvbuffer.split(';')[2]))
-                elif self._status == 'main:starting':
-                    self._result.set(True)
+                elif self._recvbuffer.startswith(AceMessage.response.STATE):
+                    self._state = self._recvbuffer.split()[1]
 
-            elif self._recvbuffer.startswith(AceMessage.response.PAUSE):
-                logger.debug("PAUSE event")
-                self._resumeevent.clear()
+                elif self._recvbuffer.startswith(AceMessage.response.STATUS):
+                    self._tempstatus = self._recvbuffer.split()[1].split(';')[0]
+                    if self._tempstatus != self._status:
+                        self._status = self._tempstatus
+                        logger.debug("STATUS changed to " + self._status)
 
-            elif self._recvbuffer.startswith(AceMessage.response.RESUME):
-                logger.debug("RESUME event")
-                gevent.sleep(self._pausedelay)
-                self._resumeevent.set()
+                    if self._status == 'main:err':
+                        logger.error(
+                            self._status + ' with message ' + self._recvbuffer.split(';')[2])
+                        self._result.set_exception(
+                            AceException(self._status + ' with message ' + self._recvbuffer.split(';')[2]))
+                        self._urlresult.set_exception(
+                            AceException(self._status + ' with message ' + self._recvbuffer.split(';')[2]))
+                    elif self._status == 'main:starting':
+                        self._result.set(True)
+
+                elif self._recvbuffer.startswith(AceMessage.response.PAUSE):
+                    logger.debug("PAUSE event")
+                    self._resumeevent.clear()
+
+                elif self._recvbuffer.startswith(AceMessage.response.RESUME):
+                    logger.debug("RESUME event")
+                    gevent.sleep(self._pausedelay)
+                    self._resumeevent.set()
