@@ -88,6 +88,7 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 logger.debug("Video Connection dropped")
                 self.video.close()
                 self.closeConnection()
+                gevent.sleep()
                 return
 
     def hangDetector(self):
@@ -110,6 +111,7 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             try:
                 self.requestgreenlet.kill()
                 self.proxyReadWritegreenlet.kill()
+                gevent.sleep()
             except:
                 pass
             return
@@ -237,6 +239,7 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         try:
             self.hanggreenlet = gevent.spawn(self.hangDetector)
             logger.debug("hangDetector spawned")
+            gevent.sleep()
 
             # Initializing AceClient
             if shouldcreateace:
