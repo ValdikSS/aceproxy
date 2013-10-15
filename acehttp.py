@@ -322,13 +322,18 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             gevent.joinall((self.proxyReadWritegreenlet, self.hanggreenlet))
             logger.debug("Greenlets joined")
 
-        except (aceclient.AceException, urllib2.URLError) as e:
+        except (aceclient.AceException, vlcclient.VlcException, urllib2.URLError) as e:
             logger.error("Exception: " + repr(e))
             self.errorhappened = True
             self.dieWithError()
         except gevent.GreenletExit:
             # hangDetector told us about client disconnection
             pass
+        except Exception as e:
+            # Unknown exception
+            logger.error("Unknown exception: " + repr(e))
+            self.errorhappened = True
+            self.dieWithError()
         finally:
             logger.debug("END REQUEST")
             AceStuff.clientcounter.delete(self.path_unquoted, self.clientip)
