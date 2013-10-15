@@ -163,7 +163,7 @@ class VlcClient(object):
                 self._recvbuffer = self._recvbuffer.lstrip("> ")
             except:
                 # If something happened during read, abandon reader
-                if self._shuttingDown.isSet():
+                if not self._shuttingDown.isSet():
                     logger.error("Exception at socket read")
                     self._shuttingDown.set()
                 return
