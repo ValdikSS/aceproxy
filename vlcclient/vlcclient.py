@@ -157,9 +157,8 @@ class VlcClient(object):
 
         while True:
             gevent.sleep()
-
             try:
-                self._recvbuffer = self._socket.read_until("\n", 1)
+                self._recvbuffer = self._socket.read_until("\n")
                 # Stripping "> " from VLC
                 self._recvbuffer = self._recvbuffer.lstrip("> ")
             except:

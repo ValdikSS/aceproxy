@@ -174,7 +174,7 @@ class AceClient(object):
         while True:
             gevent.sleep()
             try:
-                self._recvbuffer = self._socket.read_until("\r\n", 1)
+                self._recvbuffer = self._socket.read_until("\r\n")
                 self._recvbuffer = self._recvbuffer.strip()
             except:
                 # If something happened during read, abandon reader.
