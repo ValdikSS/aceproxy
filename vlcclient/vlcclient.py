@@ -158,21 +158,15 @@ class VlcClient(object):
         while True:
             gevent.sleep()
 
-            # If shuttingDown is set
-            if self._shuttingDown.isSet():
-                logger.debug("Stopping...")
-                self._socket.close()
-                return
-
             try:
                 self._recvbuffer = self._socket.read_until("\n", 1)
                 # Stripping "> " from VLC
                 self._recvbuffer = self._recvbuffer.lstrip("> ")
             except:
                 # If something happened during read, abandon reader
-                # Should not ever happen
-                logger.error("Exception at socket read")
-                self._shuttingDown.set()
+                if self._shuttingDown.isSet():
+                    logger.error("Exception at socket read")
+                    self._shuttingDown.set()
                 return
 
             # Parsing everything only if the string is not empty
