@@ -46,7 +46,7 @@ class Ttvplaylist(AceProxyPlugin):
             hostport = Ttvplaylist.host + ':' + str(connection.request.getsockname()[1])
         else:
             hostport = connection.request.getsockname()[0] + ':' + str(connection.request.getsockname()[1])
-            
+
         try:
             if connection.splittedpath[2].lower() == 'ts':
                 # Adding ts:// after http:// for some players
