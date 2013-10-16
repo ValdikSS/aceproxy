@@ -29,6 +29,11 @@ class Ttvplaylist(AceProxyPlugin):
             Ttvplaylist.logger.error("Can't download playlist!")
             return False
 
+        try:
+            Ttvplaylist.playlist = re.sub(r',(\S.+) \((.+)\)', r' group-title="\2",\1', Ttvplaylist.playlist)
+        except Exception as e:
+            Ttvplaylist.logger.error("Can't parse playlist groups! " + repr(e))
+
         return True
 
     def handle(self, connection):
