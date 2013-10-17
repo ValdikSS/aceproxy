@@ -30,9 +30,12 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         Disconnecting client
         '''
         if self.clientconnected:
-            self.wfile.close()
-            self.rfile.close()
             self.clientconnected = False
+            try:
+                self.wfile.close()
+                self.rfile.close()
+            except:
+                pass
 
     def dieWithError(self, errorcode=500):
         '''
