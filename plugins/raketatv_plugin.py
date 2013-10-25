@@ -6,6 +6,8 @@ http://ip:port/raketatv
 import re
 import logging
 import urllib2
+import cookielib
+import random
 import time
 import json
 from base64 import b64decode
@@ -19,16 +21,35 @@ class Raketatv(AceProxyPlugin):
     logger = logging.getLogger('plugin_raketatv')
     url = raketatv_config.url
     host = raketatv_config.host
+    login = raketatv_config.login
+    password = raketatv_config.password
+    tokenurl = 'https://raketa-tv.com/connect'
+    loginurl = 'https://raketa-tv.com/login_check'
+    watchurl = 'http://raketa-tv.com/watch'
     playlist = None
     playlisttime = None
 
     def downloadPlaylist(self):
         try:
+            Raketatv.logger.debug('Logging in')
+            # Cookies storage
+            cookies = cookielib.CookieJar()
+            # Getting token
+            opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookies))
+            #answer = opener.open(Raketatv.tokenurl, timeout=10).read()
+            #token = re.findall('_csrf_token" value="(.+)"', answer)[0]
+            #postdata = '_csrf_token=' + token + '&_username=' + \
+            #    urllib2.quote(Raketatv.login) + '&_password' + \
+            #    urllib2.quote(Raketatv.password) + \
+            #    '&_submit=%D0%92%D0%BE%D0%B9%D1%82%D0%B8'
+            # Posting login data
+            #opener.open(Raketatv.loginurl, data=postdata, timeout=10).read()
+            #opener.open(Raketatv.watchurl, timeout=10).read()
             Raketatv.logger.debug('Trying to download playlist')
-            playlist = urllib2.urlopen(Raketatv.url, timeout=10).read()
+            playlist = opener.open(Raketatv.url + '?v=' + str(random.randint(1,1000)), timeout=10).read()
             playlisttime = int(time.time())
-        except:
-            Raketatv.logger.error("Can't download playlist!")
+        except Exception as e:
+            Raketatv.logger.error("Can't download playlist! " + repr(e))
             return False
 
         try:
