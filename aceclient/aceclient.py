@@ -16,7 +16,7 @@ class AceException(Exception):
 
 class AceClient(object):
 
-    def __init__(self, host, port, connect_timeout=5, result_timeout=5, debug=logging.ERROR):
+    def __init__(self, host, port, connect_timeout=5, result_timeout=10, debug=logging.ERROR):
         # Receive buffer
         self._recvbuffer = None
         # Stream URL
@@ -190,9 +190,18 @@ class AceClient(object):
                     if 'key=' in self._recvbuffer:
                         self._request_key = self._recvbuffer.split()[
                             2].split('=')[1]
-                        self._write(AceMessage.request.READY_key(
-                            self._request_key, self._product_key))
+                        try:
+                            self._write(AceMessage.request.READY_key(
+                                self._request_key, self._product_key,
+                                self._resulttimeout))
+                        except urllib2.URLError as e:
+                            logger.error("Can't connect to keygen server! " + \
+                                repr(e))
+                            self._auth = False
+                            self._authevent.set()
                         self._request_key = None
+                        # Terminate _recvData
+                        return
                     else:
                         self._write(AceMessage.request.READY_nokey)
 

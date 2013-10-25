@@ -46,14 +46,14 @@ class AceMessage(object):
         SHUTDOWN = 'SHUTDOWN'
 
         @staticmethod
-        def READY_key(request_key, product_key):
+        def READY_key(request_key, product_key, timeout=10):
             if product_key:
                 # If product_key is set, use it
                 return 'READY key=' + product_key.split('-')[0] + '-' + \
                     hashlib.sha1(request_key + product_key).hexdigest()
             else:
                 # Use site with key generator
-                return 'READY key=' + urllib2.urlopen("http://valdikss.org.ru/tv/key.php?key=" + request_key, timeout=4).read()
+                return 'READY key=' + urllib2.urlopen("http://valdikss.org.ru/tv/key.php?key=" + request_key, timeout=timeout).read()
         # End READY_KEY
 
         @staticmethod

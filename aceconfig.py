@@ -18,6 +18,10 @@ class AceConfig(object):
     aceage = AceConst.AGE_18_24
     # Ace Stream sex parameter (MALE or FEMALE)
     acesex = AceConst.SEX_MALE
+    # Ace Stream connection timeout
+    aceconntimeout = 5
+    # Ace Stream authentication result timeout
+    aceresulttimeout = 10
     # AceClient debug level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
     debug = logging.DEBUG
 
