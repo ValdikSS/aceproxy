@@ -57,4 +57,5 @@ class Ttvplaylist(AceProxyPlugin):
         connection.send_response(200)
         connection.send_header('Content-type', 'application/x-mpegurl')
         connection.end_headers()
-        connection.wfile.write(re.sub('([0-9a-f]{40})', 'http://' + hostport + '/pid/\\1', Ttvplaylist.playlist))
+        connection.wfile.write(re.sub('^([^#].+)$', lambda match: 'http://' + hostport + '/torrent/' + urllib2.quote(match.group(0), ''),
+                                      Ttvplaylist.playlist, flags=re.MULTILINE))
