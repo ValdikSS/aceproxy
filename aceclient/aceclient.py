@@ -199,9 +199,9 @@ class AceClient(object):
                                 repr(e))
                             self._auth = False
                             self._authevent.set()
+                            # Terminate _recvData
+                            return
                         self._request_key = None
-                        # Terminate _recvData
-                        return
                     else:
                         self._write(AceMessage.request.READY_nokey)
 

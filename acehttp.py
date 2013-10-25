@@ -218,7 +218,7 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         # If we are the only client, create AceClient
             try:
                 self.ace = aceclient.AceClient(
-                    AceConfig.acehost, AceConfig.aceport, connect_timeout=AceConfig.aceconntimeout
+                    AceConfig.acehost, AceConfig.aceport, connect_timeout=AceConfig.aceconntimeout,
                     result_timeout=AceConfig.aceresulttimeout, debug=AceConfig.debug)
                 # Adding AceClient instance to pool
                 AceStuff.clientcounter.addAce(self.path_unquoted, self.ace)
