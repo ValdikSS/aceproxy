@@ -133,6 +133,8 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         # Connected client IP address
         self.clientip = self.request.getpeername()[0]
 
+        logger.info("Accepted connection from " + self.clientip + " path " + self.path)
+
         try:
             self.splittedpath = self.path.split('/')
             self.reqtype = self.splittedpath[1].lower()
