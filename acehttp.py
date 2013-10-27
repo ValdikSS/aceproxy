@@ -103,7 +103,6 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         logger.debug("Started")
         try:
             while True:
-                logger.debug("PING...")
                 if not self.rfile.read():
                     break
         except:
