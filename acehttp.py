@@ -265,6 +265,8 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
             # Getting URL
             self.url = self.ace.getUrl(AceConfig.videotimeout)
+            # Rewriting host for remote Ace Stream Engine
+            self.url = self.url.replace('127.0.0.1', AceConfig.acehost)
             self.errorhappened = False
 
             if shouldcreateace:
