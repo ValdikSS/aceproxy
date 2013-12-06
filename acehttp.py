@@ -220,7 +220,7 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             try:
                 self.ace = aceclient.AceClient(
                     AceConfig.acehost, AceConfig.aceport, connect_timeout=AceConfig.aceconntimeout,
-                    result_timeout=AceConfig.aceresulttimeout, debug=AceConfig.debug)
+                    result_timeout=AceConfig.aceresulttimeout)
                 # Adding AceClient instance to pool
                 AceStuff.clientcounter.addAce(self.path_unquoted, self.ace)
                 logger.debug("AceClient created")
@@ -373,7 +373,7 @@ class AceStuff(object):
 
 
 logging.basicConfig(
-    format='%(asctime)s %(levelname)s %(name)s: %(message)s', datefmt='%d.%m.%Y %H:%M:%S', level=AceConfig.httpdebug)
+    format='%(asctime)s %(levelname)s %(name)s: %(message)s', datefmt='%d.%m.%Y %H:%M:%S', level=AceConfig.debug)
 logger = logging.getLogger('INIT')
 
 # Loading plugins
@@ -409,7 +409,7 @@ if AceConfig.vlcuse:
     try:
         AceStuff.vlcclient = vlcclient.VlcClient(
             host=AceConfig.vlchost, port=AceConfig.vlcport, password=AceConfig.vlcpass,
-            out_port=AceConfig.vlcoutport, debug=AceConfig.vlcdebug)
+            out_port=AceConfig.vlcoutport)
     except vlcclient.VlcException as e:
         print repr(e)
         quit()

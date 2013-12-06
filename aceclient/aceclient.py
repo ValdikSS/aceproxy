@@ -16,7 +16,7 @@ class AceException(Exception):
 
 class AceClient(object):
 
-    def __init__(self, host, port, connect_timeout=5, result_timeout=10, debug=logging.ERROR):
+    def __init__(self, host, port, connect_timeout=5, result_timeout=10):
         # Receive buffer
         self._recvbuffer = None
         # Stream URL
@@ -29,8 +29,6 @@ class AceClient(object):
         self._shuttingDown = Event()
         # Product key
         self._product_key = None
-        # Debug level
-        self._debug = debug
         # Current STATUS
         self._status = None
         # Current STATE

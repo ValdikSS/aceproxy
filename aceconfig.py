@@ -33,7 +33,7 @@ class AceConfig(object):
     aceconntimeout = 5
     # Ace Stream Engine authentication result timeout
     aceresulttimeout = 10
-    # AceClient debug level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+    # Message level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
     debug = logging.DEBUG
     #
     # ----------------------------------------------------
@@ -93,8 +93,6 @@ class AceConfig(object):
     videodestroydelay = 3
     # Pre-buffering timeout. In seconds.
     videotimeout = 40
-    # VLC debug level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
-    vlcdebug = logging.DEBUG
     #
     # Some video players (mostly STBs and Smart TVs) can generate dummy requests
     # to detect MIME-type or something before playing which Ace Stream handles badly.
@@ -108,8 +106,6 @@ class AceConfig(object):
     fakeheaderuas = ('HLS Client/2.0 (compatible; LG NetCast.TV-2012)',
                      'Mozilla/5.0 (DirectFB; Linux armv7l) AppleWebKit/534.26+ (KHTML, like Gecko) Version/5.0 Safari/534.26+ LG Browser/5.00.00(+mouse+3D+SCREEN+TUNER; LGE; 42LM670T-ZA; 04.41.03; 0x00000001;); LG NetCast.TV-2012 0'
                      )
-    # HTTP debug level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
-    httpdebug = logging.DEBUG
 
     '''
     Run Ace Stream Engine if not running and get API port

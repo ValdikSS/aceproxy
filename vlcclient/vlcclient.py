@@ -26,7 +26,7 @@ class VlcClient(object):
 
     def __init__(
         self, host='127.0.0.1', port=4212, password='admin', connect_timeout=5,
-            result_timeout=5, out_port=8081, debug=logging.ERROR):
+            result_timeout=5, out_port=8081):
         # Receive buffer
         self._recvbuffer = None
         # Output port
