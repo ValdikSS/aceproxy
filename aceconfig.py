@@ -21,9 +21,6 @@ class AceConfig(object):
     acehost = '127.0.0.1'
     # Ace Stream Engine port (autodetect for Windows)
     aceport = 62062
-    # Ace Stream Engine video port rewrite
-    # Don't touch this unless you know what it is
-    acevideoport = 0
     # Ace Stream age parameter (LT_13, 13_17, 18_24, 25_34, 35_44, 45_54,
     # 55_64, GT_65)
     aceage = AceConst.AGE_18_24
