@@ -67,6 +67,7 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                         # Waiting 0.5 seconds. If timeout, there would be exception.
                         # Set vlcstate to False in the exception and pause the
                         # stream
+                        # A bit ugly, huh?
                         self.ace.getPlayEvent(0.5)
                         if not self.vlcstate:
                             AceStuff.vlcclient.unPauseBroadcast(self.vlcid)
