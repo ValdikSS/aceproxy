@@ -33,6 +33,8 @@ class AceClient(object):
         self._status = None
         # Current STATE
         self._state = None
+        # Is stream or VOD
+        self._is_stream = None
         # Current AUTH
         self._auth = None
         self._gender = None
@@ -156,6 +158,9 @@ class AceClient(object):
             logger.error(errmsg)
             raise AceException(errmsg)
 
+    def isStream(self):
+        return self._is_stream
+
     def getPlayEvent(self, timeout=None):
         '''
         Blocking while in PAUSE, non-blocking while in RESUME
@@ -211,6 +216,11 @@ class AceClient(object):
                     # START
                     try:
                         self._url = self._recvbuffer.split()[1]
+                        # Is this stream or VOD
+                        if 'stream=1' in self._recvbuffer:
+                            self._is_stream = True
+                        else:
+                            self._is_stream = False
                         self._urlresult.set(self._url)
                         self._resumeevent.set()
                     except IndexError as e:

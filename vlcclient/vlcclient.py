@@ -18,6 +18,16 @@ class VlcException(Exception):
     pass
 
 
+class VlcType(object):
+
+    '''
+    VLC VLM element type
+    '''
+    BROADCAST_START = 1
+    VOD_START = 2
+    BROADCAST_STOP = 3
+
+
 class VlcClient(object):
 
     '''
@@ -111,9 +121,11 @@ class VlcClient(object):
     def _broadcast(self, brtype, stream_name, input=None, muxer='ts'):
         # Start/stop broadcast with VLC
         # Logger
-        if brtype == True:
+        if brtype == VlcType.BROADCAST_START:
             broadcast = 'startBroadcast'
-        else:
+        elif brtype == VlcType.VOD_START:
+            broadcast = 'StartVOD'
+        elif brtype == VlcType.BROADCAST_STOP:
             broadcast = 'stopBroadcast'
 
         logger = logging.getLogger("VlcClient_" + broadcast)
@@ -122,10 +134,13 @@ class VlcClient(object):
         # Get lock
         self._resultlock.acquire()
         # Write message to VLC socket
-        if brtype == True:
+        if brtype == VlcType.BROADCAST_START:
             self._write(VlcMessage.request.startBroadcast(
                 stream_name, input, self._out_port, muxer))
-        else:
+        elif brtype == VlcType.VOD_START:
+            self._write(VlcMessage.request.startVOD(
+                stream_name, input, self._out_port, muxer))
+        elif brtype == VlcType.BROADCAST_STOP:
             self._write(VlcMessage.request.stopBroadcast(stream_name))
 
         try:
@@ -140,16 +155,21 @@ class VlcClient(object):
         finally:
             self._resultlock.release()
 
-        if brtype == True:
+        if brtype == VlcType.BROADCAST_START:
             logger.debug("Broadcast started")
-        else:
+        elif brtype == VlcType.VOD_START:
+            logger.debug("VOD started")
+        elif brtype == VlcType.BROADCAST_STOP:
             logger.debug("Broadcast stopped")
 
     def startBroadcast(self, stream_name, input, muxer='ts'):
-        return self._broadcast(True, stream_name, input, muxer)
+        return self._broadcast(VlcType.BROADCAST_START, stream_name, input, muxer)
+
+    def startVOD(self, stream_name, input, muxer='ts'):
+        return self._broadcast(VlcType.VOD_START, stream_name, input, muxer)
 
     def stopBroadcast(self, stream_name):
-        return self._broadcast(False, stream_name)
+        return self._broadcast(VlcType.BROADCAST_STOP, stream_name)
 
     def _recvData(self):
         # Logger
