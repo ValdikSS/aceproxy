@@ -59,6 +59,10 @@ class AceConfig(object):
     vlcoutport = 8081
     # VLC telnet interface password
     vlcpass = 'admin'
+    # Pre-access (HTTP) VLC parameters
+    # You can add transcode options here
+    # Something like #transcode{acodec=mpga,ab=128,channels=2,samplerate=44100}
+    vlcpreaccess = ''
     # VLC muxer. You probably want one of these streamable muxers:
     # ts, asf, flv, ogg, mkv
     # You can use ffmpeg muxers too, if your VLC is built with it

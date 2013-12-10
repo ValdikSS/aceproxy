@@ -118,7 +118,7 @@ class VlcClient(object):
         except EOFError as e:
             raise VlcException("Vlc Write error! ERROR: " + repr(e))
 
-    def _broadcast(self, brtype, stream_name, input=None, muxer='ts'):
+    def _broadcast(self, brtype, stream_name, input=None, muxer='ts', pre_access=''):
         # Start/stop broadcast with VLC
         # Logger
         if brtype == VlcType.BROADCAST_START:
@@ -136,7 +136,7 @@ class VlcClient(object):
         # Write message to VLC socket
         if brtype == VlcType.BROADCAST_START:
             self._write(VlcMessage.request.startBroadcast(
-                stream_name, input, self._out_port, muxer))
+                stream_name, input, self._out_port, muxer, pre_access))
         elif brtype == VlcType.VOD_START:
             self._write(VlcMessage.request.startVOD(
                 stream_name, input, self._out_port, muxer))
@@ -162,8 +162,8 @@ class VlcClient(object):
         elif brtype == VlcType.BROADCAST_STOP:
             logger.debug("Broadcast stopped")
 
-    def startBroadcast(self, stream_name, input, muxer='ts'):
-        return self._broadcast(VlcType.BROADCAST_START, stream_name, input, muxer)
+    def startBroadcast(self, stream_name, input, muxer='ts', pre_access=''):
+        return self._broadcast(VlcType.BROADCAST_START, stream_name, input, muxer, pre_access)
 
     def startVOD(self, stream_name, input, muxer='ts'):
         return self._broadcast(VlcType.VOD_START, stream_name, input, muxer)

@@ -284,7 +284,7 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
                     if self.ace.isStream():
                         AceStuff.vlcclient.startBroadcast(
-                            self.vlcid, self.vlcprefix + self.url, AceConfig.vlcmux)
+                            self.vlcid, self.vlcprefix + self.url, AceConfig.vlcmux, AceConfig.vlcpreaccess)
                     else:
                          AceStuff.vlcclient.startVOD(
                             self.vlcid, self.vlcprefix + self.url, AceConfig.vlcmux)
