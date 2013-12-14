@@ -16,12 +16,6 @@ class VlcMessage(object):
                 "\r\n" + 'control "' + stream_name + '" play'
 
         @staticmethod
-        def startVOD(stream_name, input, out_port, muxer='ts'):
-            return 'new "' + stream_name + '" vod input "' + input + '" output #http{mux=' + muxer + ',dst=:' + \
-                str(out_port) + '/' + stream_name + '} enabled' + \
-                "\r\n" + 'control "' + stream_name + '" play'
-
-        @staticmethod
         def stopBroadcast(stream_name):
             return 'del "' + stream_name + '"'
 
