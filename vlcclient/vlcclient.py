@@ -146,7 +146,7 @@ class VlcClient(object):
             logger.debug("Broadcast stopped")
 
     def startBroadcast(self, stream_name, input, muxer='ts', pre_access=''):
-        return self._broadcast(VlcType.BROADCAST_START, stream_name, input, muxer, pre_access)
+        return self._broadcast(True, stream_name, input, muxer, pre_access)
 
     def stopBroadcast(self, stream_name):
         return self._broadcast(False, stream_name)
