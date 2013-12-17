@@ -165,7 +165,7 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         #                      |_________|
         # And if it ends with regular video extension
         try:
-            if not self.splittedpath[3].endswith(('.3gp', '.avi', '.flv', '.mkv', '.mov', '.mp4', '.mpeg', '.mpg', '.ogv', '.ts')):
+            if not self.path.endswith(('.3gp', '.avi', '.flv', '.mkv', '.mov', '.mp4', '.mpeg', '.mpg', '.ogv', '.ts')):
                 logger.error("Request seems like valid but no valid video extension was provided")
                 self.dieWithError(400)
                 return
