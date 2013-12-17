@@ -194,8 +194,8 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.params = list()
         for i in xrange(3, 8):
             try:
-                self.params.append(self.splittedpath[i])
-            except IndexError:
+                self.params.append(int(self.splittedpath[i]))
+            except (IndexError, ValueError):
                 self.params.append('0')
 
         # Adding client to clientcounter
