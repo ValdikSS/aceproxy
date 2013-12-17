@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 '''
 AceProxy: Ace Stream to HTTP Proxy
 
