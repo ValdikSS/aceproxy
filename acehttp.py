@@ -159,9 +159,15 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 self.closeConnection()
                 return
 
-        # Check if second parameter exists
+        # Check if third parameter exists
+        # …/pid/blablablablabla/video.mpg
+        #                      |_________|
+        # And if it ends with regular video extension
         try:
-            self.splittedpath[2]
+            if not self.splittedpath[3].endswith(('.3gp', '.avi', '.flv', '.mkv', '.mov', '.mp4', '.mpeg', '.mpg', '.ogv', '.ts')):
+                logger.error("Request seems like valid but no valid video extension was provided")
+                self.dieWithError(400)
+                return
         except IndexError:
             self.dieWithError(400)  # 400 Bad Request
             return
