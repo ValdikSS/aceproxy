@@ -181,12 +181,6 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.end_headers()
             self.closeConnection()
             return
-        # MX Player on Android tries to get subtitles for the video
-        # So let's make it happy
-        if self.path.endswith('.srt') or self.path.endswith('.ass') or self.path.endswith('.ssa') or self.path.endswith('.smi'):
-            logger.debug("Returning 404 for subtitles request")
-            self.dieWithError(404)
-            return
 
         self.path_unquoted = urllib2.unquote(self.splittedpath[2])
         # Make list with parameters
