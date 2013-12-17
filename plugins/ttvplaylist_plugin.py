@@ -59,7 +59,7 @@ class Ttvplaylist(AceProxyPlugin):
         connection.end_headers()
         # For .acelive URLs
         playlist = re.sub('^(http.+)$', lambda match: 'http://' + hostport + '/torrent/' + \
-            urllib2.quote(match.group(0), ''), Ttvplaylist.playlist, flags=re.MULTILINE)
+            urllib2.quote(match.group(0), '') + '/stream.mp4', Ttvplaylist.playlist, flags=re.MULTILINE)
         # For PIDs
-        playlist = re.sub('^([0-9a-f]{40})$', 'http://' + hostport + '/pid/\\1', playlist, flags=re.MULTILINE)
+        playlist = re.sub('^([0-9a-f]{40})$', 'http://' + hostport + '/pid/\\1/stream.mp4', playlist, flags=re.MULTILINE)
         connection.wfile.write(playlist)

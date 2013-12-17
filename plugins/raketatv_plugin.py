@@ -74,4 +74,4 @@ class Raketatv(AceProxyPlugin):
         connection.send_response(200)
         connection.send_header('Content-type', 'application/x-mpegurl')
         connection.end_headers()
-        connection.wfile.write(re.sub('([0-9a-f]{40})', 'http://' + hostport + '/pid/\\1', Raketatv.playlist))
+        connection.wfile.write(re.sub('([0-9a-f]{40})', 'http://' + hostport + '/pid/\\1/stream.mp4', Raketatv.playlist))
