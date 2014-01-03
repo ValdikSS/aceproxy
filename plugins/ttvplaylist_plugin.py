@@ -32,7 +32,20 @@ class Ttvplaylist(AceProxyPlugin):
         try:
             Ttvplaylist.playlist = re.sub(r',(\S.+) \((.+)\)', r' group-title="\2",\1', Ttvplaylist.playlist)
         except Exception as e:
-            Ttvplaylist.logger.error("Can't parse playlist groups! " + repr(e))
+            Ttvplaylist.logger.warning("Can't parse playlist groups! " + repr(e))
+
+        try:
+            # Add JTV
+            Ttvplaylist.playlist = re.sub('#EXTM3U', r'#EXTM3U url-tvg="http://www.teleguide.info/download/new3/jtv.zip"',
+                                          Ttvplaylist.playlist)
+        except Exception as e:
+            Ttvplaylist.logger.warning("Can't add JTV! " + repr(e))
+
+        try:
+            Ttvplaylist.playlist = re.sub(r',(\S.+)', lambda match: ' tvg-name="' + match.group(1).replace(' ', '_') + '",' \
+                + match.group(1), Ttvplaylist.playlist)
+        except Exception as e:
+            Ttvplaylist.logger.warning("Can't add channel JTV name! " + repr(e))
 
         return True
 
