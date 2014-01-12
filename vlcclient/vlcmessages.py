@@ -12,7 +12,7 @@ class VlcMessage(object):
         def startBroadcast(stream_name, input, out_port, muxer='ts', pre_access=''):
             return 'new "' + stream_name + '" broadcast input "' + input + '" output ' + (pre_access + ':' if pre_access else '#') + \
                 'http{mux=' + muxer + ',dst=:' + \
-                str(out_port) + '/' + stream_name + '} enabled' + \
+                str(out_port) + '/' + stream_name + '} option sout-keep option sout-all enabled' + \
                 "\r\n" + 'control "' + stream_name + '" play'
 
         @staticmethod
