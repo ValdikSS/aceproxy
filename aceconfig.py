@@ -43,6 +43,10 @@ class AceConfig(object):
     httpport = 8000
     # Maximum concurrent connections (video clients)
     maxconns = 10
+    # Logging to a file
+    loggingtoafile = False
+    # Path for logs, default is current directory. For example '/tmp/'
+    logpath = ''
     # Use VideoLAN VLC Media Player
     # I strongly recommend to use VLC, because it lags a lot without it
     # And multiple clients can't watch one stream without it.
