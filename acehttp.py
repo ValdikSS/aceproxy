@@ -27,6 +27,13 @@ from plugins.PluginInterface import AceProxyPlugin
 
 class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
+    requestlist = []
+
+    def handle_one_request(self):
+        HTTPHandler.requestlist.append(self)
+        BaseHTTPServer.BaseHTTPRequestHandler.handle_one_request(self)
+        HTTPHandler.requestlist.remove(self)
+
     def closeConnection(self):
         '''
         Disconnecting client
@@ -353,10 +360,11 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             logger.debug("END REQUEST")
             AceStuff.clientcounter.delete(self.path_unquoted, self.clientip)
             if not self.errorhappened and not AceStuff.clientcounter.get(self.path_unquoted):
-                # If no error happened and we are the only client
-                logger.debug("Sleeping for " + str(
-                    AceConfig.videodestroydelay) + " seconds")
-                gevent.sleep(AceConfig.videodestroydelay)
+                if not AceStuff.terminating:
+                    # If no error happened and we are the only client
+                    logger.debug("Sleeping for " + str(
+                        AceConfig.videodestroydelay) + " seconds")
+                    gevent.sleep(AceConfig.videodestroydelay)
             if not AceStuff.clientcounter.get(self.path_unquoted):
                 logger.debug("That was the last client, destroying AceClient")
                 if AceConfig.vlcuse:
@@ -379,7 +387,12 @@ class HTTPServer(SocketServer.ThreadingMixIn, BaseHTTPServer.HTTPServer):
 
 
 class AceStuff(object):
-    pass
+    '''
+    Inter-class interaction class
+    '''
+
+    # Terminating flag
+    terminating = False
 
 
 logging.basicConfig(
@@ -432,7 +445,9 @@ try:
     server.serve_forever()
 except (KeyboardInterrupt, SystemExit):
     logger.info("Stopping server...")
+    AceStuff.terminating = True
+    # Closing all client connections
+    for connection in server.RequestHandlerClass.requestlist:
+        connection.hanggreenlet.kill()
     server.shutdown()
     server.server_close()
-    for i in AceStuff.pluginlist:
-        del i
