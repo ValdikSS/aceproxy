@@ -30,6 +30,9 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     requestlist = []
 
     def handle_one_request(self):
+        '''
+        Add request to requestlist, handle request and remove from the list
+        '''
         HTTPHandler.requestlist.append(self)
         BaseHTTPServer.BaseHTTPRequestHandler.handle_one_request(self)
         HTTPHandler.requestlist.remove(self)
