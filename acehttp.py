@@ -429,7 +429,7 @@ if AceConfig.vlcuse:
 try:
     logger.info("Server started.")
     server.serve_forever()
-except KeyboardInterrupt:
+except (KeyboardInterrupt, SystemExit):
     logger.info("Stopping server...")
     server.shutdown()
     server.server_close()
