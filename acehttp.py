@@ -114,7 +114,6 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             logger.debug("Client disconnected")
             try:
                 self.requestgreenlet.kill()
-                self.proxyReadWritegreenlet.kill()
                 gevent.sleep()
             except:
                 pass
@@ -330,12 +329,12 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 # Sleeping videodelay
                 gevent.sleep(AceConfig.videodelay)
 
-            # Spawning proxyReadWrite greenlet
-            self.proxyReadWritegreenlet = gevent.spawn(self.proxyReadWrite)
+            # Run proxyReadWrite
+            self.proxyReadWrite()
 
-            # Waiting until all greenlets are joined
-            gevent.joinall((self.proxyReadWritegreenlet, self.hanggreenlet))
-            logger.debug("Greenlets joined")
+            # Waiting until hangDetector is joined
+            self.hanggreenlet.join()
+            logger.debug("Request handler finished")
 
         except (aceclient.AceException, vlcclient.VlcException, urllib2.URLError) as e:
             logger.error("Exception: " + repr(e))
