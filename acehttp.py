@@ -15,6 +15,7 @@ import sys
 import logging
 import BaseHTTPServer
 import SocketServer
+from socket import error as SocketException
 import urllib2
 import hashlib
 import aceclient
@@ -88,7 +89,7 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 else:
                     # Prevent 100% CPU usage
                     gevent.sleep(0.5)
-            except:
+            except SocketException:
                 # Video connection dropped
                 logger.debug("Video Connection dropped")
                 self.video.close()
