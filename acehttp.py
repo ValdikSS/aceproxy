@@ -427,6 +427,7 @@ if AceConfig.vlcuse:
 
 
 try:
+    logger.info("Using gevent %s" % gevent.__version__)
     logger.info("Server started.")
     server.serve_forever()
 except (KeyboardInterrupt, SystemExit):
