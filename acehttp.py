@@ -9,7 +9,6 @@ import gevent
 import gevent.monkey
 # Monkeypatching and all the stuff
 gevent.monkey.patch_all()
-import gevent.queue
 import glob
 import os
 import sys
