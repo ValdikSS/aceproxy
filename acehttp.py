@@ -122,9 +122,10 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             logger.debug("Client disconnected")
             try:
                 self.requestgreenlet.kill()
-                gevent.sleep()
             except:
                 pass
+            finally:
+                gevent.sleep()
             return
 
     def do_GET(self):
