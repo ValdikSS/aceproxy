@@ -3,6 +3,7 @@ from gevent.event import AsyncResult
 from gevent.event import Event
 import telnetlib
 import logging
+import json
 from acemessages import *
 
 
@@ -121,21 +122,13 @@ class AceClient(object):
 
         logger.debug("aceInit ended")
 
-    def START(self, datatype, value):
-        '''
-        Start video method
-        '''
-
+    def _getResult(self):
         # Logger
         logger = logging.getLogger("AceClient_START")
 
-        self._result = AsyncResult()
-        self._urlresult = AsyncResult()
-
-        self._write(AceMessage.request.START(datatype.upper(), value))
-
         try:
-            if not self._result.get(timeout=self._resulttimeout):
+            result = self._result.get(timeout=self._resulttimeout)
+            if not result:
                 errmsg = "START error!"
                 logger.error(errmsg)
                 raise AceException(errmsg)
@@ -143,6 +136,23 @@ class AceClient(object):
             errmsg = "START timeout!"
             logger.error(errmsg)
             raise AceException(errmsg)
+
+        return result
+
+    def START(self, datatype, value):
+        '''
+        Start video method
+        '''
+        self._result = AsyncResult()
+        self._urlresult = AsyncResult()
+
+        self._write(AceMessage.request.LOADASYNC(datatype.upper(), 0, value))
+        contentinfo = self._getResult()
+
+        self._write(AceMessage.request.START(datatype.upper(), value))
+        self._getResult()
+
+        return contentinfo
 
     def getUrl(self, timeout=40):
         # Logger
@@ -206,6 +216,20 @@ class AceClient(object):
                     logger.error("Ace is not ready. Wrong auth?")
                     self._auth = False
                     self._authevent.set()
+
+                elif self._recvbuffer.startswith(AceMessage.response.LOADRESP):
+                    # LOADRESP
+                    _contentinfo_raw = self._recvbuffer.split()[2:]
+                    _contentinfo_raw = ' '.join(_contentinfo_raw)
+                    _contentinfo = json.loads(_contentinfo_raw)
+                    if _contentinfo.get('status') == 100:
+                        logger.error("LOADASYNC returned error with message: %s"
+                            % _contentinfo.get('message'))
+                        self._result.set(False)
+                    else:
+                        logger.debug("Content info: %s", _contentinfo)
+                        _filename = urllib2.unquote(_contentinfo.get('files')[0][0])
+                        self._result.set(_filename)
 
                 elif self._recvbuffer.startswith(AceMessage.response.START):
                     # START

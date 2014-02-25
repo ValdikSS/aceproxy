@@ -272,13 +272,13 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     product_key=AceConfig.acekey, pause_delay=AceConfig.videopausedelay)
                 logger.debug("AceClient inited")
                 if self.reqtype == 'pid':
-                    self.ace.START(
+                    contentinfo = self.ace.START(
                         self.reqtype, {'content_id': self.path_unquoted, 'file_indexes': self.params[0]})
                 elif self.reqtype == 'torrent':
                     self.paramsdict = dict(
                         zip(aceclient.acemessages.AceConst.START_TORRENT, self.params))
                     self.paramsdict['url'] = self.path_unquoted
-                    self.ace.START(self.reqtype, self.paramsdict)
+                    contentinfo = self.ace.START(self.reqtype, self.paramsdict)
                 logger.debug("START done")
 
             # Getting URL

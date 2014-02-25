@@ -59,25 +59,25 @@ class AceMessage(object):
         @staticmethod
         def LOADASYNC(command, request_id, params_dict):
             if command == 'TORRENT':
-                return 'ASYNCLOAD ' + request_id + 'TORRENT ' + str(params_dict.get('url')) + ' ' +  \
+                return 'LOADASYNC ' + str(request_id) + ' TORRENT ' + str(params_dict.get('url')) + ' ' +  \
                     str(params_dict.get('developer_id', '0')) + ' ' + \
                     str(params_dict.get('affiliate_id', '0')) + ' ' + \
                     str(params_dict.get('zone_id', '0'))
 
             elif command == 'INFOHASH':
-                return 'ASYNCLOAD ' + request_id + 'INFOHASH ' + str(params_dict.get('infohash')) + ' ' + \
+                return 'LOADASYNC ' + str(request_id) + ' INFOHASH ' + str(params_dict.get('infohash')) + ' ' + \
                     str(params_dict.get('developer_id', '0')) + ' ' + \
                     str(params_dict.get('affiliate_id', '0')) + ' ' + \
                     str(params_dict.get('zone_id', '0'))
 
             elif command == 'RAW':
-                return 'ASYNCLOAD ' + request_id + 'RAW ' + str(params_dict.get('data')) + ' ' + \
+                return 'LOADASYNC ' + str(request_id) + ' RAW ' + str(params_dict.get('data')) + ' ' + \
                     str(params_dict.get('developer_id', '0')) + ' ' + \
                     str(params_dict.get('affiliate_id', '0')) + ' ' + \
                     str(params_dict.get('zone_id', '0'))
 
             elif command == "PID":
-                return 'ASYNCLOAD ' + request_id + 'PID ' + str(params_dict.get('content_id'))
+                return 'LOADASYNC ' + str(request_id) + ' PID ' + str(params_dict.get('content_id'))
         # End LOADASYNC
 
         @staticmethod
@@ -143,3 +143,4 @@ class AceMessage(object):
         STATUS = 'STATUS'
         PAUSE = 'PAUSE'
         RESUME = 'RESUME'
+        LOADRESP = 'LOADRESP'
