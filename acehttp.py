@@ -361,11 +361,10 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             logger.debug("END REQUEST")
             AceStuff.clientcounter.delete(self.path_unquoted, self.clientip)
             if not self.errorhappened and not AceStuff.clientcounter.get(self.path_unquoted):
-                if not AceStuff.terminating:
-                    # If no error happened and we are the only client
-                    logger.debug("Sleeping for " + str(
-                        AceConfig.videodestroydelay) + " seconds")
-                    gevent.sleep(AceConfig.videodestroydelay)
+                # If no error happened and we are the only client
+                logger.debug("Sleeping for " + str(
+                    AceConfig.videodestroydelay) + " seconds")
+                gevent.sleep(AceConfig.videodestroydelay)
             if not AceStuff.clientcounter.get(self.path_unquoted):
                 logger.debug("That was the last client, destroying AceClient")
                 if AceConfig.vlcuse:
@@ -391,9 +390,6 @@ class AceStuff(object):
     '''
     Inter-class interaction class
     '''
-
-    # Terminating flag
-    terminating = False
 
 
 logging.basicConfig(
@@ -446,9 +442,10 @@ try:
     server.serve_forever()
 except (KeyboardInterrupt, SystemExit):
     logger.info("Stopping server...")
-    AceStuff.terminating = True
     # Closing all client connections
     for connection in server.RequestHandlerClass.requestlist:
+        # Set errorhappened to prevent waiting for videodestroydelay
+        connection.errorhappened = True
         connection.hanggreenlet.kill()
     server.shutdown()
     server.server_close()
