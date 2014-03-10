@@ -401,7 +401,11 @@ logging.basicConfig(
 logger = logging.getLogger('INIT')
 
 # Loading plugins
-os.chdir(os.path.dirname(os.path.realpath(__file__)))
+# Trying to change dir (would fail in freezed state)
+try:
+    os.chdir(os.path.dirname(os.path.realpath(__file__)))
+except:
+    pass
 # Creating dict of handlers
 AceStuff.pluginshandlers = dict()
 # And a list with plugin instances
