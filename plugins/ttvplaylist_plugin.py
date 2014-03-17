@@ -54,11 +54,8 @@ class Ttvplaylist(AceProxyPlugin):
             if not self.downloadPlaylist():
                 connection.dieWithError()
                 return
-
-        if Ttvplaylist.host:
-            hostport = Ttvplaylist.host + ':' + str(connection.request.getsockname()[1])
-        else:
-            hostport = connection.request.getsockname()[0] + ':' + str(connection.request.getsockname()[1])
+            
+        hostport = connection.headers['Host']
 
         try:
             if connection.splittedpath[2].lower() == 'ts':
