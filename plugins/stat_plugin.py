@@ -3,7 +3,7 @@ Simple statistics plugin
 
 To use it, go to http://127.0.0.1:8000/stat
 '''
-from PluginInterface import AceProxyPlugin
+from modules.PluginInterface import AceProxyPlugin
 
 
 class Stat(AceProxyPlugin):

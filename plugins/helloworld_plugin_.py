@@ -4,7 +4,7 @@ Rename this file to helloworld_plugin.py to enable it.
 
 To use it, go to http://127.0.0.1:8000/helloworld
 '''
-from PluginInterface import AceProxyPlugin
+from modules.PluginInterface import AceProxyPlugin
 
 
 class Helloworld(AceProxyPlugin):
