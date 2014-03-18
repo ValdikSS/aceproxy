@@ -131,7 +131,10 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 gevent.sleep()
             return
 
-    def do_GET(self):
+    def do_HEAD(self):
+        return self.do_GET(headers_only=True)
+
+    def do_GET(self, headers_only=False):
         '''
         GET request handler
         '''
@@ -190,9 +193,12 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.dieWithError(503)  # 503 Service Unavailable
             return
 
-        # Pretend to work fine with Fake UAs
-        if self.headers.get('User-Agent') and self.headers.get('User-Agent') in AceConfig.fakeuas:
-            logger.debug("Got fake UA: " + self.headers.get('User-Agent'))
+        # Pretend to work fine with Fake UAs or HEAD request.
+        useragent = self.headers.get('User-Agent')
+        fakeua = useragent and useragent in AceConfig.fakeuas
+        if headers_only or fakeua:
+            if fakeua:
+                logger.debug("Got fake UA: " + self.headers.get('User-Agent'))
             # Return 200 and exit
             self.send_response(200)
             self.send_header("Content-Type", "video/mpeg")
@@ -251,9 +257,9 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 return
 
         # Send fake headers if this User-Agent is in fakeheaderuas tuple
-        if self.headers.get('User-Agent') and self.headers.get('User-Agent') in AceConfig.fakeheaderuas:
+        if fakeua:
             logger.debug(
-                "Sending fake headers for " + self.headers.get('User-Agent'))
+                "Sending fake headers for " + useragent)
             self.send_response(200)
             self.send_header("Content-Type", "video/mpeg")
             self.end_headers()
