@@ -22,7 +22,7 @@ import aceclient
 from aceconfig import AceConfig
 import vlcclient
 from aceclient.clientcounter import ClientCounter
-from plugins.PluginInterface import AceProxyPlugin
+from plugins.modules.PluginInterface import AceProxyPlugin
 
 
 class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
