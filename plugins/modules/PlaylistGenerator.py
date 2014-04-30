@@ -53,7 +53,7 @@ class PlaylistGenerator(object):
                              urllib2.quote(match.group(0), '') + '/stream.mp4', item['url'],
                                    flags=re.MULTILINE)
             # For PIDs
-            item['url'] = re.sub('^([0-9a-f]{40})$', 'http://' + hostport + '/pid/\\1/stream.mp4',
+            item['url'] = re.sub('^(acestream://)?(?P<pid>[0-9a-f]{40})$', 'http://' + hostport + '/pid/\\g<pid>/stream.mp4',
                                     item['url'], flags=re.MULTILINE)
 
             itemlist += PlaylistGenerator._generatem3uline(item)
