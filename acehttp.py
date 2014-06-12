@@ -67,8 +67,9 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         logger.debug("Started")
 
         self.vlcstate = True
-        while True:
-            try:
+
+        try:
+            while True:
                 if AceConfig.videoobey and not AceConfig.vlcuse:
                     # Wait for PlayEvent if videoobey is enabled. Not for VLC
                     self.ace.getPlayEvent()
@@ -91,21 +92,20 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
                 if not self.clientconnected:
                     logger.debug("Client is not connected, terminating")
-                    return
+                    break
 
                 data = self.video.read(4096)
                 if data and self.clientconnected:
                     self.wfile.write(data)
                 else:
-                    # Prevent 100% CPU usage
-                    gevent.sleep(0.5)
-            except SocketException:
-                # Video connection dropped
-                logger.debug("Video Connection dropped")
-                self.video.close()
-                self.closeConnection()
-                gevent.sleep()
-                return
+                    logger.warning("Video connection closed")
+                    break
+        except SocketException:
+            # Video connection dropped
+            logger.warning("Video connection dropped")
+        finally:
+            self.video.close()
+            self.closeConnection()
 
     def hangDetector(self):
         '''
@@ -113,7 +113,6 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         or just normal connection close.
         '''
         logger = logging.getLogger('http_hangDetector')
-        logger.debug("Started")
         try:
             while True:
                 if not self.rfile.read():
@@ -389,10 +388,7 @@ class HTTPServer(SocketServer.ThreadingMixIn, BaseHTTPServer.HTTPServer):
 
     def handle_error(self, request, client_address):
         # Do not print HTTP tracebacks
-        try:
-            pass
-        except Exception as e:
-            print repr(e)
+        pass
 
 
 class AceStuff(object):
@@ -451,6 +447,8 @@ if AceConfig.vlcuse:
 
 try:
     logger.info("Using gevent %s" % gevent.__version__)
+    if AceConfig.vlcuse:
+         logger.info("Using VLC %s" % AceStuff.vlcclient._vlcver)
     logger.info("Server started.")
     server.serve_forever()
 except (KeyboardInterrupt, SystemExit):
