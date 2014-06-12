@@ -6,6 +6,7 @@ import re
 import logging
 import urllib2
 import time
+import gevent
 from modules.PluginInterface import AceProxyPlugin
 from modules.PlaylistGenerator import PlaylistGenerator
 import config.torrenttv
@@ -20,6 +21,15 @@ class Torrenttv(AceProxyPlugin):
     url = config.torrenttv.url
     playlist = None
     playlisttime = None
+
+    def __init__(self, AceConfig, AceStuff):
+        if config.torrenttv.updateevery:
+            gevent.spawn(self.playlistTimedDownloader)
+
+    def playlistTimedDownloader(self):
+        while True:
+            gevent.sleep(config.torrenttv.updateevery * 60)
+            self.downloadPlaylist()
 
     def downloadPlaylist(self):
         try:
