@@ -21,6 +21,7 @@ import hashlib
 import aceclient
 from aceconfig import AceConfig
 import vlcclient
+import plugins.modules.ipaddr as ipaddr
 from aceclient.clientcounter import ClientCounter
 from plugins.modules.PluginInterface import AceProxyPlugin
 
@@ -147,6 +148,18 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.requestgreenlet = gevent.getcurrent()
         # Connected client IP address
         self.clientip = self.request.getpeername()[0]
+
+        if AceConfig.firewall:
+            # If firewall enabled
+            self.clientinrange = any(map(lambda i: ipaddr.IPAddress(self.clientip) \
+                                in ipaddr.IPNetwork(i), AceConfig.firewallnetranges))
+
+            if (AceConfig.firewallblacklistmode and self.clientinrange) or \
+                (not AceConfig.firewallblacklistmode and not self.clientinrange):
+                    logger.info('Dropping connection from ' + self.clientip + ' due to ' + \
+                                'firewall rules')
+                    self.dieWithError(403)  # 403 Forbidden
+                    return
 
         logger.info("Accepted connection from " + self.clientip + " path " + self.path)
 

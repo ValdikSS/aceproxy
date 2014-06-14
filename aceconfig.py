@@ -41,6 +41,16 @@ class AceConfig(object):
     httphost = '0.0.0.0'
     # HTTP Server port
     httpport = 8000
+    # Enable firewall
+    firewall = False
+    # Firewall mode. True for blackilst, False for whitelist
+    firewallblacklistmode = False
+    # Network ranges. Please don't forget about comma in the end
+    # of every range, especially if there is only one.
+    firewallnetranges = (
+        '127.0.0.1',
+        '192.168.0.0/16',
+        )
     # Maximum concurrent connections (video clients)
     maxconns = 10
     # Logging to a file
