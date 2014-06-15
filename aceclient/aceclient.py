@@ -196,8 +196,9 @@ class AceClient(object):
                 if self._recvbuffer.startswith(AceMessage.response.HELLO):
                     # Parse HELLO
                     if 'key=' in self._recvbuffer:
-                        self._request_key = self._recvbuffer.split()[
-                            2].split('=')[1]
+                        self._request_key_begin = self._recvbuffer.find('key=')
+                        self._request_key = \
+                            self._recvbuffer[self._request_key_begin+4:self._request_key_begin+14]
                         try:
                             self._write(AceMessage.request.READY_key(
                                 self._request_key, self._product_key,
