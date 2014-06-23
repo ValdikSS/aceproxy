@@ -11,6 +11,7 @@ import gevent.monkey
 gevent.monkey.patch_all()
 import glob
 import os
+import signal
 import sys
 import logging
 import BaseHTTPServer
@@ -19,6 +20,7 @@ from socket import error as SocketException
 import urllib2
 import hashlib
 import aceclient
+import aceconfig
 from aceconfig import AceConfig
 import vlcclient
 import plugins.modules.ipaddr as ipaddr
@@ -409,7 +411,19 @@ class AceStuff(object):
     Inter-class interaction class
     '''
 
+def _reloadconfig(signum, frame):
+    '''
+    Reload configuration file.
+    SIGHUP handler.
+    '''
+    global AceConfig
 
+    logger = logging.getLogger('reloadconfig')
+    reload(aceconfig)
+    from aceconfig import AceConfig
+    logger.info('Config reloaded')
+
+signal.signal(signal.SIGHUP, _reloadconfig)
 logging.basicConfig(
     filename=AceConfig.logpath + 'acehttp.log' if AceConfig.loggingtoafile else None,
     format='%(asctime)s %(levelname)s %(name)s: %(message)s', datefmt='%d.%m.%Y %H:%M:%S', level=AceConfig.debug)
