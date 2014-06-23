@@ -423,7 +423,12 @@ def _reloadconfig(signum, frame):
     from aceconfig import AceConfig
     logger.info('Config reloaded')
 
-signal.signal(signal.SIGHUP, _reloadconfig)
+try:
+    signal.signal(signal.SIGHUP, _reloadconfig)
+except AttributeError:
+    # not available on Windows
+    pass
+
 logging.basicConfig(
     filename=AceConfig.logpath + 'acehttp.log' if AceConfig.loggingtoafile else None,
     format='%(asctime)s %(levelname)s %(name)s: %(message)s', datefmt='%d.%m.%Y %H:%M:%S', level=AceConfig.debug)
