@@ -495,7 +495,7 @@ server = HTTPServer((AceConfig.httphost, AceConfig.httpport), HTTPHandler)
 logger = logging.getLogger('HTTP')
 
 # Dropping root privileges if needed
-if AceConfig.os != 'Windows' and len(AceConfig.aceproxyuser) > 0 and os.getuid() == 0:
+if AceConfig.os != 'Windows' and AceConfig.aceproxyuser and os.getuid() == 0:
     if drop_privileges(AceConfig.aceproxyuser):
         logger.info("Dropped privileges to user " + AceConfig.aceproxyuser)
     else:
