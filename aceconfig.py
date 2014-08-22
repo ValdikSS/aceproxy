@@ -41,6 +41,9 @@ class AceConfig(object):
     httphost = '0.0.0.0'
     # HTTP Server port
     httpport = 8000
+    # If started as root, drop privileges to this user.
+    # Leave empty to disable.
+    aceproxyuser = ''
     # Enable firewall
     firewall = False
     # Firewall mode. True for blackilst, False for whitelist
@@ -127,7 +130,8 @@ class AceConfig(object):
     Only for Windows
     Do not touch this
     '''
-    if platform.system() == 'Windows':
+    os = platform.system()
+    if os == 'Windows':
         import _winreg
         import os.path
         reg = _winreg.ConnectRegistry(None, _winreg.HKEY_CURRENT_USER)
