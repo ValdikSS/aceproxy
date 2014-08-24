@@ -11,8 +11,6 @@ import gevent.monkey
 gevent.monkey.patch_all()
 import glob
 import os
-import pwd
-import grp
 import signal
 import sys
 import logging
@@ -28,6 +26,13 @@ import vlcclient
 import plugins.modules.ipaddr as ipaddr
 from aceclient.clientcounter import ClientCounter
 from plugins.modules.PluginInterface import AceProxyPlugin
+try:
+    import pwd
+    import grp
+except ImportError:
+    # Windows
+    pass
+
 
 
 class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
