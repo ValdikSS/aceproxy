@@ -492,7 +492,7 @@ for i in pluginslist:
     AceStuff.pluginlist.append(plugininstance)
 
 # Check whether we can bind to the defined port safely
-if os.getuid() != 0 and AceConfig.httpport <= 1024:
+if AceConfig.osplatform != 'Windows' and os.getuid() != 0 and AceConfig.httpport <= 1024:
     logger.error("Cannot bind to port " + str(AceConfig.httpport) + " without root privileges")
     quit()
 
@@ -500,7 +500,7 @@ server = HTTPServer((AceConfig.httphost, AceConfig.httpport), HTTPHandler)
 logger = logging.getLogger('HTTP')
 
 # Dropping root privileges if needed
-if AceConfig.os != 'Windows' and AceConfig.aceproxyuser and os.getuid() == 0:
+if AceConfig.osplatform != 'Windows' and AceConfig.aceproxyuser and os.getuid() == 0:
     if drop_privileges(AceConfig.aceproxyuser):
         logger.info("Dropped privileges to user " + AceConfig.aceproxyuser)
     else:

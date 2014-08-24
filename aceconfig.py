@@ -130,8 +130,8 @@ class AceConfig(object):
     Only for Windows
     Do not touch this
     '''
-    os = platform.system()
-    if os == 'Windows':
+    osplatform = platform.system()
+    if osplatform == 'Windows':
         import _winreg
         import os.path
         reg = _winreg.ConnectRegistry(None, _winreg.HKEY_CURRENT_USER)
