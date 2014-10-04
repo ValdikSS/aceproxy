@@ -13,7 +13,7 @@ class AceConfig(object):
     #
     # Spawn Ace Stream Engine automatically
     # Need gevent 1.0.0 or higher
-    acespawn = True
+    acespawn = False
     # Ace Stream cmd line (use `--log-file filepath` to write log)
     # Autodetect for Windows
     acecmd = "acestreamengine --client-console"
