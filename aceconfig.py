@@ -11,6 +11,12 @@ class AceConfig(object):
     # Ace Stream Engine configuration
     # ----------------------------------------------------
     #
+    # Spawn Ace Stream Engine automatically
+    # Need gevent 1.0.0 or higher
+    acespawn = True
+    # Ace Stream cmd line (use `--log-file filepath` to write log)
+    # Autodetect for Windows
+    acecmd = "acestreamengine --client-console"
     # Ace Stream API key
     # You probably shouldn't touch this
     acekey = 'n51LvQoTlJzNGaFxseRK-uvnvX-sD4Vm5Axwmc4UcoD-jruxmKsuJaH0eVgE'
@@ -19,7 +25,7 @@ class AceConfig(object):
     # Remember that by default Ace Stream Engine listens only
     # Local host, so start it with --bind-all parameter
     acehost = '127.0.0.1'
-    # Ace Stream Engine port (autodetect for Windows)
+    # Ace Stream Engine port (autodetect for Windows if acespawn = True)
     aceport = 62062
     # Ace Stream age parameter (LT_13, 13_17, 18_24, 25_34, 35_44, 45_54,
     # 55_64, GT_65)
@@ -68,6 +74,12 @@ class AceConfig(object):
     # And run it with:
     # vlc -I telnet --clock-jitter 0 --network-caching 500 --telnet-pass admin
     vlcuse = False
+    # Spawn VLC automaticaly
+    # Need gevent 1.0.0 or higher
+    vlcspawn = False
+    # VLC cmd line (use `--file-logging --logfile=filepath` to write log)
+    # Please use the full path to executable for Windows, for example - C:\\Program Files\\VideoLAN\\VLC\\vlc.exe
+    vlccmd = "vlc -I telnet --clock-jitter 0 --network-caching 500 --sout-mux-caching 500 --telnet-password admin --telnet-port 4212"
     # VLC host
     vlchost = '127.0.0.1'
     # VLC telnet interface port
@@ -124,40 +136,5 @@ class AceConfig(object):
     fakeheaderuas = ('HLS Client/2.0 (compatible; LG NetCast.TV-2012)',
                      'Mozilla/5.0 (DirectFB; Linux armv7l) AppleWebKit/534.26+ (KHTML, like Gecko) Version/5.0 Safari/534.26+ LG Browser/5.00.00(+mouse+3D+SCREEN+TUNER; LGE; 42LM670T-ZA; 04.41.03; 0x00000001;); LG NetCast.TV-2012 0'
                      )
-
-    '''
-    Run Ace Stream Engine if not running and get API port
-    Only for Windows
-    Do not touch this
-    '''
+    # Platform detection, you probably should not touch this
     osplatform = platform.system()
-    if osplatform == 'Windows':
-        import _winreg
-        import os.path
-        reg = _winreg.ConnectRegistry(None, _winreg.HKEY_CURRENT_USER)
-        key = _winreg.OpenKey(reg, 'Software\AceStream')
-        value = _winreg.QueryValueEx(key, 'EnginePath')
-        dirpath = os.path.dirname(value[0])
-        try:
-            aceport = int(open(dirpath + '\\acestream.port', 'r').read())
-        except IOError:
-            # Ace Stream is not running, start it
-            import subprocess
-            import time
-            subprocess.Popen([value[0]])
-            _started = False
-            for i in xrange(10):
-                time.sleep(1)
-                try:
-                    aceport = int(
-                        open(dirpath + '\\acestream.port', 'r').read())
-                    _started = True
-                    break
-                except IOError:
-                    _started = False
-            if not _started:
-                print "Can't start engine!"
-                quit()
-    '''
-    Do not touch this
-    '''

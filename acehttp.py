@@ -442,24 +442,6 @@ def drop_privileges(uid_name, gid_name='nogroup'):
         return True
     return False
 
-def _reloadconfig(signum, frame):
-    '''
-    Reload configuration file.
-    SIGHUP handler.
-    '''
-    global AceConfig
-
-    logger = logging.getLogger('reloadconfig')
-    reload(aceconfig)
-    from aceconfig import AceConfig
-    logger.info('Config reloaded')
-
-try:
-    signal.signal(signal.SIGHUP, _reloadconfig)
-except AttributeError:
-    # not available on Windows
-    pass
-
 logging.basicConfig(
     filename=AceConfig.logpath + 'acehttp.log' if AceConfig.loggingtoafile else None,
     format='%(asctime)s %(levelname)s %(name)s: %(message)s', datefmt='%d.%m.%Y %H:%M:%S', level=AceConfig.debug)
@@ -494,7 +476,7 @@ for i in pluginslist:
 # Check whether we can bind to the defined port safely
 if AceConfig.osplatform != 'Windows' and os.getuid() != 0 and AceConfig.httpport <= 1024:
     logger.error("Cannot bind to port " + str(AceConfig.httpport) + " without root privileges")
-    quit()
+    quit(1)
 
 server = HTTPServer((AceConfig.httphost, AceConfig.httpport), HTTPHandler)
 logger = logging.getLogger('HTTP')
@@ -505,20 +487,150 @@ if AceConfig.osplatform != 'Windows' and AceConfig.aceproxyuser and os.getuid() 
         logger.info("Dropped privileges to user " + AceConfig.aceproxyuser)
     else:
         logger.error("Cannot drop privileges to user " + AceConfig.aceproxyuser)
-        quit()
+        quit(1)
 
 # Creating ClientCounter
 AceStuff.clientcounter = ClientCounter()
 
-if AceConfig.vlcuse:
-    # Creating VLC VLM Client
+# We need gevent >= 1.0.0 to use gevent.subprocess
+if AceConfig.acespawn or AceConfig.vlcspawn:
+    try:
+        gevent.monkey.patch_subprocess()
+    except:
+        logger.error("Cannot spawn anything without gevent 1.0.0 or higher.")
+        quit(1)
+
+if AceConfig.vlcspawn or AceConfig.acespawn:
+    DEVNULL = open(os.devnull, 'wb')
+
+# Spawning procedures
+def spawnVLC(cmd, delay = 0):
+    try:
+        AceStuff.vlc = gevent.subprocess.Popen(cmd, stdout=DEVNULL, stderr=DEVNULL)
+        gevent.sleep(delay)
+        return True
+    except:
+        return False
+
+def connectVLC():
     try:
         AceStuff.vlcclient = vlcclient.VlcClient(
             host=AceConfig.vlchost, port=AceConfig.vlcport, password=AceConfig.vlcpass,
             out_port=AceConfig.vlcoutport)
+        return True
     except vlcclient.VlcException as e:
         print repr(e)
-        quit()
+        return False
+
+def spawnAce(cmd, delay = 0):
+    if AceConfig.osplatform == 'Windows':
+        reg = _winreg.ConnectRegistry(None, _winreg.HKEY_CURRENT_USER)
+        try:
+            key = _winreg.OpenKey(reg, 'Software\AceStream')
+        except:
+            print "Can't find acestream!"
+            quit(1)
+        engine = _winreg.QueryValueEx(key, 'EnginePath')
+        AceStuff.acedir = os.path.dirname(engine[0])
+        try:
+            AceConfig.aceport = int(open(AceStuff.acedir + '\\acestream.port', 'r').read())
+            logger.warning("Ace Stream is already running, disabling runtime checks")
+            AceConfig.acespawn = False
+            return True
+        except IOError:
+            cmd = engine[0].split()
+    try:
+        AceStuff.ace = gevent.subprocess.Popen(cmd, stdout=DEVNULL, stderr=DEVNULL)
+        gevent.sleep(delay)
+        return True
+    except:
+        return False
+
+def isRunning(process):
+    if process.poll() is not None:
+        return False
+    return True
+
+def clean_proc():
+    # Trying to close all spawned processes gracefully
+    if AceConfig.vlcspawn and isRunning(AceStuff.vlc):
+        AceStuff.vlc.terminate()
+        gevent.sleep(1)
+        # or not :)
+        if isRunning(AceStuff.vlc):
+            AceStuff.vlc.kill()
+    if AceConfig.acespawn and isRunning(AceStuff.ace):
+        AceStuff.ace.terminate()
+        gevent.sleep(1)
+        if isRunning(AceStuff.ace):
+            AceStuff.ace.kill()
+        # for windows, subprocess.terminate() is just an alias for kill(), so we have to delete the acestream port file manually
+        if AceConfig.osplatform == 'Windows' and os.path.isfile(AceStuff.acedir + '\\acestream.port'):
+            os.remove(AceStuff.acedir + '\\acestream.port')
+
+# This is what we call to stop the server completely
+def shutdown(signum = 0, frame = 0):
+    logger.info("Stopping server...")
+    # Closing all client connections
+    for connection in server.RequestHandlerClass.requestlist:
+        try:
+            # Set errorhappened to prevent waiting for videodestroydelay
+            connection.errorhappened = True
+            connection.hanggreenlet.kill()
+        except:
+            logger.warning("Cannot kill a connection!")
+    clean_proc()
+    server.server_close()
+    quit()
+
+def _reloadconfig(signum, frame):
+    '''
+    Reload configuration file.
+    SIGHUP handler.
+    '''
+    global AceConfig
+
+    logger = logging.getLogger('reloadconfig')
+    reload(aceconfig)
+    from aceconfig import AceConfig
+    logger.info('Config reloaded')
+
+# setting signal handlers
+try:
+    gevent.signal(signal.SIGHUP, _reloadconfig)
+    gevent.signal(signal.SIGTERM, shutdown)
+except AttributeError:
+    # not available on Windows
+    pass
+
+if AceConfig.vlcuse:
+    if AceConfig.vlcspawn:
+        AceStuff.vlcProc = AceConfig.vlccmd.split()
+        if spawnVLC(AceStuff.vlcProc, 1) and connectVLC():
+            logger.info("VLC spawned with pid " + str(AceStuff.vlc.pid))
+        else:
+            logger.error("Cannot spawn VLC!")
+            quit(1)
+    else:
+        if not connectVLC():
+            clean_proc()
+            quit(1);
+
+if AceConfig.acespawn:
+    if AceConfig.osplatform == 'Windows':
+        import _winreg
+        import os.path
+        AceStuff.aceProc = ""
+    else:
+        AceStuff.aceProc = AceConfig.acecmd.split()
+    if spawnAce(AceStuff.aceProc, 1):
+        # could be redefined internally
+        if AceConfig.acespawn:
+            logger.info("Ace Stream spawned with pid " + str(AceStuff.ace.pid))
+    else:
+        logger.error("Cannot spawn Ace Stream!")
+        clean_proc()
+        quit(1)
 
 
 try:
@@ -526,13 +638,26 @@ try:
     if AceConfig.vlcuse:
          logger.info("Using VLC %s" % AceStuff.vlcclient._vlcver)
     logger.info("Server started.")
-    server.serve_forever()
+    while True:
+        if AceConfig.vlcspawn and AceConfig.vlcuse:
+            if not isRunning(AceStuff.vlc):
+                del AceStuff.vlc
+                if spawnVLC(AceStuff.vlcProc, 1) and connectVLC():
+                    logger.info("VLC died, respawned it with pid " + str(AceStuff.vlc.pid))
+                else:
+                    logger.error("Cannot spawn VLC!")
+                    clean_proc()
+                    quit(1)
+        if AceConfig.acespawn:
+            if not isRunning(AceStuff.ace):
+                del AceStuff.ace
+                if spawnAce(AceStuff.aceProc, 1):
+                    logger.info("Ace Stream died, respawned it with pid " + str(AceStuff.ace.pid))
+                else:
+                    logger.error("Cannot spawn Ace Stream!")
+                    clean_proc()
+                    quit(1)
+        # Return to our server tasks
+        server.handle_request()
 except (KeyboardInterrupt, SystemExit):
-    logger.info("Stopping server...")
-    # Closing all client connections
-    for connection in server.RequestHandlerClass.requestlist:
-        # Set errorhappened to prevent waiting for videodestroydelay
-        connection.errorhappened = True
-        connection.hanggreenlet.kill()
-    server.shutdown()
-    server.server_close()
+    shutdown()
