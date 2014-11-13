@@ -686,6 +686,9 @@ try:
                 del AceStuff.ace
                 if spawnAce(AceStuff.aceProc, 1):
                     logger.info("Ace Stream died, respawned it with pid " + str(AceStuff.ace.pid))
+                    while not detectPort():
+                        logger.info("Waiting for Ace Engine...")
+                        gevent.sleep(5)
                 else:
                     logger.error("Cannot spawn Ace Stream!")
                     clean_proc()
