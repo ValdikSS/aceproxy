@@ -644,11 +644,7 @@ if AceConfig.vlcuse:
     else:
         if not connectVLC():
             clean_proc()
-            quit(1);
-
-while not detectPort():
-    logger.info("Waiting for Ace Engine...")
-    gevent.sleep(5)
+            quit(1)
 
 if AceConfig.acespawn:
     if AceConfig.osplatform == 'Windows':
@@ -665,6 +661,10 @@ if AceConfig.acespawn:
         logger.error("Cannot spawn Ace Stream!")
         clean_proc()
         quit(1)
+
+while not detectPort():
+    logger.info("Waiting for Ace Engine...")
+    gevent.sleep(5)
 
 try:
     logger.info("Using gevent %s" % gevent.__version__)
