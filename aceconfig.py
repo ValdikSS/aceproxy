@@ -25,13 +25,18 @@ class AceConfig(object):
     # Remember that by default Ace Stream Engine listens only
     # Local host, so start it with --bind-all parameter
     acehost = '127.0.0.1'
-    # Ace Stream Engine port (autodetect for Windows if acespawn = True)
+    # Ace Stream Engine port (autodetect for Windows)
     aceport = 62062
     # Ace Stream age parameter (LT_13, 13_17, 18_24, 25_34, 35_44, 45_54,
     # 55_64, GT_65)
     aceage = AceConst.AGE_18_24
     # Ace Stream sex parameter (MALE or FEMALE)
     acesex = AceConst.SEX_MALE
+    # Ace Stream Engine startup timeout
+    # On Windows Ace Engine refreshes acestream.port file only after loading GUI
+    # Loading takes about ~10 seconds and we need to wait before taking port out of it
+    # Set this to 0 if you don't use proxy at startup or don't need to wait
+    acestartuptimeout = 10
     # Ace Stream Engine connection timeout
     aceconntimeout = 5
     # Ace Stream Engine authentication result timeout
