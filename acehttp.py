@@ -8,6 +8,8 @@ Website: https://github.com/ValdikSS/AceProxy
 import gevent
 import gevent.monkey
 # Monkeypatching and all the stuff
+from plugins.p2pproxy_plugin import P2pproxy
+
 gevent.monkey.patch_all()
 import glob
 import os
@@ -186,7 +188,8 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             return
 
         # Handle request with plugin handler
-        if self.reqtype in AceStuff.pluginshandlers:
+        # /channels/play request should not be handled by plugin
+        if self.reqtype in AceStuff.pluginshandlers and '/channels/play' not in self.path:
             try:
                 AceStuff.pluginshandlers.get(self.reqtype).handle(self)
             except Exception as e:
@@ -201,7 +204,8 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         #                      |_________|
         # And if it ends with regular video extension
         try:
-            if not self.path.endswith(('.3gp', '.avi', '.flv', '.mkv', '.mov', '.mp4', '.mpeg', '.mpg', '.ogv', '.ts')):
+            if not self.path.endswith(('.3gp', '.avi', '.flv', '.mkv', '.mov', '.mp4', '.mpeg', '.mpg', '.ogv', '.ts'))\
+                    and '/channels/play' not in self.path:
                 logger.error("Request seems like valid but no valid video extension was provided")
                 self.dieWithError(400)
                 return
@@ -210,7 +214,7 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             return
 
         # Limit concurrent connections
-        if AceConfig.maxconns > 0 and AceStuff.clientcounter.total >= AceConfig.maxconns:
+        if 0 < AceConfig.maxconns <= AceStuff.clientcounter.total:
             logger.debug("Maximum connections reached, can't serve this")
             self.dieWithError(503)  # 503 Service Unavailable
             return
@@ -228,7 +232,7 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.closeConnection()
             return
 
-        self.path_unquoted = urllib2.unquote(self.splittedpath[2])
+        self.path_unquoted = urllib2.unquote(self.path)
         # Make list with parameters
         self.params = list()
         for i in xrange(3, 8):
@@ -303,10 +307,23 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     contentinfo = self.ace.START(
                         self.reqtype, {'content_id': self.path_unquoted, 'file_indexes': self.params[0]})
                 elif self.reqtype == 'torrent':
-                    self.paramsdict = dict(
+                    paramsdict = dict(
                         zip(aceclient.acemessages.AceConst.START_TORRENT, self.params))
-                    self.paramsdict['url'] = self.path_unquoted
-                    contentinfo = self.ace.START(self.reqtype, self.paramsdict)
+                    paramsdict['url'] = self.path_unquoted
+                    contentinfo = self.ace.START(self.reqtype, paramsdict)
+                elif '/channels/play' in self.path:
+                    playparam = self.path.split('?')[1]
+                    cid = playparam.split('=')[1]
+                    type, source = AceStuff.pluginshandlers.get(self.reqtype).getSource(cid)
+                    if type is None or source is None:
+                        logger.error("Can't get the source from P2pproxy")
+                        return
+                    if type == 'contentid':
+                        contentinfo = self.ace.START(
+                        'pid', {'content_id': source, 'file_indexes': 0})
+                    elif type == 'torrent':
+                        paramsdict = dict({'url': source})
+                        contentinfo = self.ace.START('torrent', paramsdict)
                 logger.debug("START done")
 
             # Getting URL
