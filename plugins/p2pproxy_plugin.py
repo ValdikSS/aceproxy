@@ -175,7 +175,7 @@ class P2pproxy(AceProxyPlugin):
                 connection.dieWithError()
                 return
             connection.send_response(200)
-            connection.send_header('Content-Type', 'application/x-mpegurl')
+            connection.send_header('Content-Type', 'text/xml')
             connection.end_headers()
 
             connection.wfile.write(P2pproxy.xml)
