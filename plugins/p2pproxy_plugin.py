@@ -20,7 +20,6 @@ __author__ = 'miltador'
 import logging
 import urllib2
 import time
-from urlparse import urlparse
 from xml.dom.minidom import parseString
 
 from modules.PluginInterface import AceProxyPlugin
@@ -149,31 +148,29 @@ class P2pproxy(AceProxyPlugin):
     def handle(self, connection):
         P2pproxy.logger.debug('Handling request')
         # 30 minutes cache
-        if not P2pproxy.translationslist or (int(time.time()) - P2pproxy.playlisttime > 30 * 60):
+        if P2pproxy.translationslist is None or (int(time.time()) - P2pproxy.playlisttime > 30 * 60):
             if not self.downloadPlaylist():
                 connection.dieWithError()
                 return
 
-        parsed = urlparse(connection.path)
-        try:
-            if parsed.type == 'm3u':
-                hostport = connection.headers['Host']
+        if 'm3u' in connection.path:
+            hostport = connection.headers['Host']
 
-                connection.send_response(200)
-                connection.send_header('Content-Type', 'application/x-mpegurl')
-                connection.end_headers()
+            connection.send_response(200)
+            connection.send_header('Content-Type', 'application/x-mpegurl')
+            connection.end_headers()
 
-                playlistgen = PlaylistGenerator()
-                for channel in P2pproxy.translationslist:
-                    name = channel.getAttribute('name')
-                    cid = channel.getAttribute('id')
-                    group = P2pproxy.categories[channel.getAttribute('group')]
-                    playlistgen.addItem({'name': name, 'url': cid, 'group': group})
+            playlistgen = PlaylistGenerator()
+            for channel in P2pproxy.translationslist:
+                name = channel.getAttribute('name')
+                cid = channel.getAttribute('id')
+                group = P2pproxy.categories[channel.getAttribute('group')]
+                playlistgen.addItem({'name': name, 'url': cid, 'group': group})
 
-                exported = playlistgen.exportm3u(hostport, False)
-                exported = exported.encode('utf-8')
-                connection.wfile.write(exported)
-        except AttributeError:
+            exported = playlistgen.exportm3u(hostport, False)
+            exported = exported.encode('utf-8')
+            connection.wfile.write(exported)
+        else:
             if P2pproxy.xml is None:
                 connection.dieWithError()
                 return
