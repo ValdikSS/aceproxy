@@ -15,6 +15,8 @@ What is this plugin for?
     set the httpport to 8081
     set the vlcoutport to some other port (8082 for example)
 '''
+import gevent
+
 __author__ = 'miltador'
 
 import logging
@@ -45,6 +47,13 @@ class P2pproxy(AceProxyPlugin):
 
     def __init__(self, AceConfig, AceStuff):
         super(P2pproxy, self).__init__(AceConfig, AceStuff)
+        if config.p2pproxy.updateevery:
+            gevent.spawn(self.sessionUpdater)
+
+    def sessionUpdater(self):
+        while True:
+            gevent.sleep(config.p2pproxy.updateevery * 60)
+            self.auth()
 
     '''
     Every API request returns if it is successfull and if no, gives a reason

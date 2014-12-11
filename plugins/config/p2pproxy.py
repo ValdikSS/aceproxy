@@ -21,3 +21,10 @@ email = 're.place@me'
 
 # Insert your torrent-tv account password
 password = 'ReplaceMe'
+
+# Update session every N minutes to prevent
+# torrent-tv tracker forgetting us.
+#
+# 0 = disabled
+# Do not touch this if you don't understand what it does!
+updateevery = 60
