@@ -661,7 +661,7 @@ except AttributeError:
 if AceConfig.vlcuse:
     if AceConfig.vlcspawn:
         AceStuff.vlcProc = AceConfig.vlccmd.split()
-        if spawnVLC(AceStuff.vlcProc, 10) and connectVLC():
+        if spawnVLC(AceStuff.vlcProc, 5) and connectVLC():
             logger.info("VLC spawned with pid " + str(AceStuff.vlc.pid))
         else:
             logger.error("Cannot spawn VLC!")
