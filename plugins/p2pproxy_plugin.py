@@ -133,8 +133,8 @@ class P2pproxy(AceProxyPlugin):
             return None, None
         res = parseString(xmlresult).documentElement
         if self.checkRequestSuccess(res):
-            return res.getElementsByTagName('type')[0].childNodes[0].data, \
-                   res.getElementsByTagName('source')[0].childNodes[0].data
+            return res.getElementsByTagName('type')[0].childNodes[0].data.encode('utf-8'), \
+                   res.getElementsByTagName('source')[0].childNodes[0].data.encode('utf-8')
         else:
             return None, None
 

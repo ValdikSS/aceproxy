@@ -5,6 +5,7 @@ AceProxy: Ace Stream to HTTP Proxy
 
 Website: https://github.com/ValdikSS/AceProxy
 '''
+import traceback
 import gevent
 import gevent.monkey
 # Monkeypatching and all the stuff
@@ -187,9 +188,13 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.dieWithError(400)  # 400 Bad Request
             return
 
+        self.p2pproxy = False
+        if '/channels/play' in self.path:
+            self.p2pproxy = True
+
         # Handle request with plugin handler
         # /channels/play request should not be handled by plugin
-        if self.reqtype in AceStuff.pluginshandlers and '/channels/play' not in self.path:
+        if self.reqtype in AceStuff.pluginshandlers and not self.p2pproxy:
             try:
                 AceStuff.pluginshandlers.get(self.reqtype).handle(self)
             except Exception as e:
@@ -205,7 +210,7 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         # And if it ends with regular video extension
         try:
             if not self.path.endswith(('.3gp', '.avi', '.flv', '.mkv', '.mov', '.mp4', '.mpeg', '.mpg', '.ogv', '.ts'))\
-                    and '/channels/play' not in self.path:
+                    and not self.p2pproxy:
                 logger.error("Request seems like valid but no valid video extension was provided")
                 self.dieWithError(400)
                 return
@@ -232,15 +237,15 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.closeConnection()
             return
 
-        if '/channels/play' in self.path:
+        if self.p2pproxy:
             playparam = self.path.split('?')[1]
             cid = playparam.split('=')[1]
-            self.type, self.source = AceStuff.pluginshandlers.get(self.reqtype).getSource(cid)
-            if self.type is None or self.source is None:
+            self.reqtype, self.source = AceStuff.pluginshandlers.get(self.reqtype).getSource(cid)
+            if self.reqtype is None or self.source is None:
                 logger.error("Can't get the source from P2pproxy")
                 self.dieWithError(400)  # 400 Bad Request
                 return
-            self.path_unquoted = self.source
+            self.path_unquoted = urllib2.unquote(self.source)
         else:
             self.path_unquoted = urllib2.unquote(self.splittedpath[2])
             # Make list with parameters
@@ -263,7 +268,7 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
         # Use PID as VLC ID if PID requested
         # Or torrent url MD5 hash if torrent requested
-        if self.reqtype == 'pid':
+        if self.reqtype == 'pid' or self.reqtype == 'contentid':
             self.vlcid = self.path_unquoted
         else:
             self.vlcid = hashlib.md5(self.path_unquoted).hexdigest()
@@ -316,18 +321,17 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 if self.reqtype == 'pid':
                     contentinfo = self.ace.START(
                         self.reqtype, {'content_id': self.path_unquoted, 'file_indexes': self.params[0]})
-                elif self.reqtype == 'torrent':
+                elif self.reqtype == 'torrent' and not self.p2pproxy:
                     paramsdict = dict(
                         zip(aceclient.acemessages.AceConst.START_TORRENT, self.params))
                     paramsdict['url'] = self.path_unquoted
                     contentinfo = self.ace.START(self.reqtype, paramsdict)
-                elif '/channels/play' in self.path:
-                    if self.type == 'contentid':
-                        contentinfo = self.ace.START(
-                        'pid', {'content_id': self.source, 'file_indexes': 0})
-                    elif self.type == 'torrent':
-                        paramsdict = dict({'url': self.source})
-                        contentinfo = self.ace.START('torrent', paramsdict)
+                elif self.reqtype == 'contentid':
+                    contentinfo = self.ace.START(
+                    'pid', {'content_id': self.source, 'file_indexes': 0})
+                elif self.reqtype == 'torrent' and self.p2pproxy:
+                    paramsdict = dict({'url': self.source})
+                    contentinfo = self.ace.START(self.reqtype, paramsdict)
                 logger.debug("START done")
 
             # Getting URL
@@ -404,9 +408,9 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         except gevent.GreenletExit:
             # hangDetector told us about client disconnection
             pass
-        except Exception as e:
+        except Exception:
             # Unknown exception
-            logger.error("Unknown exception: " + repr(e))
+            logger.error(traceback.format_exc())
             self.errorhappened = True
             self.dieWithError()
         finally:
@@ -657,7 +661,7 @@ except AttributeError:
 if AceConfig.vlcuse:
     if AceConfig.vlcspawn:
         AceStuff.vlcProc = AceConfig.vlccmd.split()
-        if spawnVLC(AceStuff.vlcProc, 1) and connectVLC():
+        if spawnVLC(AceStuff.vlcProc, 10) and connectVLC():
             logger.info("VLC spawned with pid " + str(AceStuff.vlc.pid))
         else:
             logger.error("Cannot spawn VLC!")
