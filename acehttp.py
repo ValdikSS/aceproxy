@@ -232,14 +232,24 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.closeConnection()
             return
 
-        self.path_unquoted = urllib2.unquote(self.path)
-        # Make list with parameters
-        self.params = list()
-        for i in xrange(3, 8):
-            try:
-                self.params.append(int(self.splittedpath[i]))
-            except (IndexError, ValueError):
-                self.params.append('0')
+        if '/channels/play' in self.path:
+            playparam = self.path.split('?')[1]
+            cid = playparam.split('=')[1]
+            self.type, self.source = AceStuff.pluginshandlers.get(self.reqtype).getSource(cid)
+            if self.type is None or self.source is None:
+                logger.error("Can't get the source from P2pproxy")
+                self.dieWithError(400)  # 400 Bad Request
+                return
+            self.path_unquoted = self.source
+        else:
+            self.path_unquoted = urllib2.unquote(self.splittedpath[2])
+            # Make list with parameters
+            self.params = list()
+            for i in xrange(3, 8):
+                try:
+                    self.params.append(int(self.splittedpath[i]))
+                except (IndexError, ValueError):
+                    self.params.append('0')
 
         # Adding client to clientcounter
         clients = AceStuff.clientcounter.add(self.path_unquoted, self.clientip)
@@ -312,17 +322,11 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     paramsdict['url'] = self.path_unquoted
                     contentinfo = self.ace.START(self.reqtype, paramsdict)
                 elif '/channels/play' in self.path:
-                    playparam = self.path.split('?')[1]
-                    cid = playparam.split('=')[1]
-                    type, source = AceStuff.pluginshandlers.get(self.reqtype).getSource(cid)
-                    if type is None or source is None:
-                        logger.error("Can't get the source from P2pproxy")
-                        return
-                    if type == 'contentid':
+                    if self.type == 'contentid':
                         contentinfo = self.ace.START(
-                        'pid', {'content_id': source, 'file_indexes': 0})
-                    elif type == 'torrent':
-                        paramsdict = dict({'url': source})
+                        'pid', {'content_id': self.source, 'file_indexes': 0})
+                    elif self.type == 'torrent':
+                        paramsdict = dict({'url': self.source})
                         contentinfo = self.ace.START('torrent', paramsdict)
                 logger.debug("START done")
 
