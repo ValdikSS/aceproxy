@@ -123,7 +123,7 @@ class P2pproxy(AceProxyPlugin):
         if P2pproxy.session is None:
                 if not self.auth():
                     return None, None
-        P2pproxy.logger.error('Getting source for channel id: ' + channelId)
+        P2pproxy.logger.debug('Getting source for channel id: ' + channelId)
         try:
             xmlresult = urllib2.urlopen(
                 'http://api.torrent-tv.ru/v2_get_stream.php?session=' + P2pproxy.session +
