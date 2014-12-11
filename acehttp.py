@@ -700,7 +700,7 @@ try:
         if AceConfig.vlcspawn and AceConfig.vlcuse:
             if not isRunning(AceStuff.vlc):
                 del AceStuff.vlc
-                if spawnVLC(AceStuff.vlcProc, 1) and connectVLC():
+                if spawnVLC(AceStuff.vlcProc, 5) and connectVLC():
                     logger.info("VLC died, respawned it with pid " + str(AceStuff.vlc.pid))
                 else:
                     logger.error("Cannot spawn VLC!")
