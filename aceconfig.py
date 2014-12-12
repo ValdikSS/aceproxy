@@ -85,6 +85,9 @@ class AceConfig(object):
     # VLC cmd line (use `--file-logging --logfile=filepath` to write log)
     # Please use the full path to executable for Windows, for example - C:\\Program Files\\VideoLAN\\VLC\\vlc.exe
     vlccmd = "vlc -I telnet --clock-jitter -1 --network-caching -1 --sout-mux-caching 2000 --telnet-password admin"
+    # VLC spawn timeout
+    # Adjust this if you get error 'Cannot spawn VLC!'
+    vlcspawntimeout = 5
     # VLC host
     vlchost = '127.0.0.1'
     # VLC telnet interface port
