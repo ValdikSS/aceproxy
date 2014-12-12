@@ -174,7 +174,10 @@ class P2pproxy(AceProxyPlugin):
                 name = channel.getAttribute('name')
                 cid = channel.getAttribute('id')
                 group = P2pproxy.categories[channel.getAttribute('group')]
-                playlistgen.addItem({'name': name, 'url': cid, 'group': group})
+                logo = channel.getAttribute('logo')
+                if config.p2pproxy.fullpathlogo:
+                    logo = 'http://torrent-tv.ru/uploads/' + logo
+                playlistgen.addItem({'name': name, 'url': cid, 'group': group, 'logo': logo})
 
             exported = playlistgen.exportm3u(hostport, False)
             exported = exported.encode('utf-8')
