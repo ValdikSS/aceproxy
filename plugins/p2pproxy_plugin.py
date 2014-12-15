@@ -52,6 +52,7 @@ class P2pproxy(AceProxyPlugin):
         super(P2pproxy, self).__init__(AceConfig, AceStuff)
         if config.p2pproxy.updateevery:
             gevent.spawn(self.sessionUpdater)
+        self.downloadPlaylist()
 
     def sessionUpdater(self):
         while True:
@@ -99,13 +100,13 @@ class P2pproxy(AceProxyPlugin):
                 return
 
             stream_url = None
-            stream_type, stream_link = P2pproxy.streamlist[channel_id]
-            if stream_type == 'torrent':
+            stream = P2pproxy.streamlist[channel_id]
+            if 'torrent' in stream:
                 stream_url = re.sub('^(http.+)$', lambda match: 'http://' + hostport + '/torrent/' + \
-                             urllib2.quote(match.group(0), '') + '/stream.mp4', stream_link)
-            elif stream_type == 'contentid':
+                             urllib2.quote(match.group(0), '') + '/stream.mp4', stream['torrent'])
+            elif 'contentid' in stream:
                 stream_url = re.sub('^(http.+)$', lambda match: 'http://' + hostport + '/pid/' + \
-                             urllib2.quote(match.group(0), '') + '/stream.mp4', stream_link)
+                             urllib2.quote(match.group(0), '') + '/stream.mp4', stream['contentid'])
             connection.path = stream_url
             connection.splittedpath = stream_url.split('/')
             connection.reqtype = connection.splittedpath[1].lower()
@@ -130,11 +131,11 @@ class P2pproxy(AceProxyPlugin):
 
                 cid = channel.getAttribute('id')
                 stream_uri = None
-                stream_type, stream_link = P2pproxy.streamlist[cid]
-                if stream_type == 'torrent':
-                    stream_uri = stream_link
-                elif stream_type == 'contentid':
-                   stream_uri = 'acestream://' + stream_link
+                stream = P2pproxy.streamlist[cid]
+                if 'torrent' in stream:
+                    stream_uri = stream['torrent']
+                elif 'contentid' in stream:
+                   stream_uri = 'acestream://' + stream['contentid']
 
                 logo = channel.getAttribute('logo')
                 if config.p2pproxy.fullpathlogo:
