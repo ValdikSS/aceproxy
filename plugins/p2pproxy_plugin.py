@@ -51,7 +51,6 @@ class P2pproxy(AceProxyPlugin):
         super(P2pproxy, self).__init__(AceConfig, AceStuff)
         if config.p2pproxy.updateevery:
             gevent.spawn(self.sessionUpdater)
-        self.downloadPlaylist()
 
     def sessionUpdater(self):
         while True:
