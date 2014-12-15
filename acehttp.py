@@ -574,7 +574,10 @@ def isRunning(process):
 def aceRunning():
     for process in psutil.get_process_list():
         try:
-            name = process.name
+            if AceConfig.osplatform == 'Windows':  # wtf? on Windows process.name() is method
+                name = process.name()
+            else:
+                name = process.name                # on Linux it's a variable
             if name == 'ace_engine.exe' or name == 'acestreamengine':
                 if AceStuff.ace is None:
                     AceStuff.ace = process
