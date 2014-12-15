@@ -66,7 +66,7 @@ class P2pproxy(AceProxyPlugin):
     def handle(self, connection):
         P2pproxy.logger.debug('Handling request')
         # 30 minutes cache
-        if int(time.time()) - P2pproxy.sessionupdatetime > 60 * 60:
+        if P2pproxy.sessionupdatetime is None or int(time.time()) - P2pproxy.sessionupdatetime > 60 * 60:
             if not self.auth():
                 connection.dieWithError()
                 return
