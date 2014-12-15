@@ -576,8 +576,8 @@ def isRunning(process):
 def aceRunning():
     for process in psutil.get_process_list():
         try:
-            name = process.name()
-            if name == "ace_engine.exe" or 'acestreamengine' in name:
+            name = process.name
+            if name == 'ace_engine.exe' or name == 'acestreamengine':
                 if AceStuff.ace is None:
                     AceStuff.ace = process
                 return True
