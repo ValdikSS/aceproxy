@@ -188,13 +188,9 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.dieWithError(400)  # 400 Bad Request
             return
 
-        self.p2pproxy = False
-        if '/channels/play' in self.path:
-            self.p2pproxy = True
-
         # Handle request with plugin handler
         # /channels/play request should not be handled by plugin
-        if self.reqtype in AceStuff.pluginshandlers and not self.p2pproxy:
+        if self.reqtype in AceStuff.pluginshandlers:
             try:
                 AceStuff.pluginshandlers.get(self.reqtype).handle(self)
             except Exception as e:
@@ -203,14 +199,17 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             finally:
                 self.closeConnection()
                 return
+        self.handleRequest(headers_only)
 
+    def handleRequest(self, headers_only):
+        self.splittedpath = self.path.split('/')
+        self.reqtype = self.splittedpath[1].lower()
         # Check if third parameter exists
         # …/pid/blablablablabla/video.mpg
         #                      |_________|
         # And if it ends with regular video extension
         try:
-            if not self.path.endswith(('.3gp', '.avi', '.flv', '.mkv', '.mov', '.mp4', '.mpeg', '.mpg', '.ogv', '.ts'))\
-                    and not self.p2pproxy:
+            if not self.path.endswith(('.3gp', '.avi', '.flv', '.mkv', '.mov', '.mp4', '.mpeg', '.mpg', '.ogv', '.ts')):
                 logger.error("Request seems like valid but no valid video extension was provided")
                 self.dieWithError(400)
                 return
@@ -237,24 +236,14 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.closeConnection()
             return
 
-        if self.p2pproxy:
-            playparam = self.path.split('?')[1]
-            cid = playparam.split('=')[1]
-            self.reqtype, self.source = AceStuff.pluginshandlers.get(self.reqtype).getSource(cid)
-            if self.reqtype is None or self.source is None:
-                logger.error("Can't get the source from P2pproxy")
-                self.dieWithError(400)  # 400 Bad Request
-                return
-            self.path_unquoted = urllib2.unquote(self.source)
-        else:
-            self.path_unquoted = urllib2.unquote(self.splittedpath[2])
-            # Make list with parameters
-            self.params = list()
-            for i in xrange(3, 8):
-                try:
-                    self.params.append(int(self.splittedpath[i]))
-                except (IndexError, ValueError):
-                    self.params.append('0')
+        self.path_unquoted = urllib2.unquote(self.splittedpath[2])
+        # Make list with parameters
+        self.params = list()
+        for i in xrange(3, 8):
+            try:
+                self.params.append(int(self.splittedpath[i]))
+            except (IndexError, ValueError):
+                self.params.append('0')
 
         # Adding client to clientcounter
         clients = AceStuff.clientcounter.add(self.path_unquoted, self.clientip)
@@ -268,7 +257,7 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
         # Use PID as VLC ID if PID requested
         # Or torrent url MD5 hash if torrent requested
-        if self.reqtype == 'pid' or self.reqtype == 'contentid':
+        if self.reqtype == 'pid':
             self.vlcid = self.path_unquoted
         else:
             self.vlcid = hashlib.md5(self.path_unquoted).hexdigest()
@@ -321,16 +310,10 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 if self.reqtype == 'pid':
                     contentinfo = self.ace.START(
                         self.reqtype, {'content_id': self.path_unquoted, 'file_indexes': self.params[0]})
-                elif self.reqtype == 'torrent' and not self.p2pproxy:
+                elif self.reqtype == 'torrent':
                     paramsdict = dict(
                         zip(aceclient.acemessages.AceConst.START_TORRENT, self.params))
                     paramsdict['url'] = self.path_unquoted
-                    contentinfo = self.ace.START(self.reqtype, paramsdict)
-                elif self.reqtype == 'contentid':
-                    contentinfo = self.ace.START(
-                    'pid', {'content_id': self.source, 'file_indexes': 0})
-                elif self.reqtype == 'torrent' and self.p2pproxy:
-                    paramsdict = dict({'url': self.source})
                     contentinfo = self.ace.START(self.reqtype, paramsdict)
                 logger.debug("START done")
 
