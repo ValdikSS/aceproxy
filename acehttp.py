@@ -202,8 +202,6 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.handleRequest(headers_only)
 
     def handleRequest(self, headers_only):
-        self.splittedpath = self.path.split('/')
-        self.reqtype = self.splittedpath[1].lower()
         # Check if third parameter exists
         # …/pid/blablablablabla/video.mpg
         #                      |_________|

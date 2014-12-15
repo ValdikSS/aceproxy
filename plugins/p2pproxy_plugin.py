@@ -61,6 +61,7 @@ class P2pproxy(AceProxyPlugin):
 
     def downloadPlaylist(self):
         P2pproxy.logger.debug('Going to update p2pproxy playlist')
+        P2pproxy.logger.debug('This gonna take some time...')
         # First of all, authorization and getting session
         if P2pproxy.session is None:  # we need to auth only once
             if not self.auth():
@@ -91,57 +92,60 @@ class P2pproxy(AceProxyPlugin):
         except IndexError:
             pass
         query = urlparse.urlparse(connection.path).query
-        params = urlparse.parse_qs(query)
+        self.params = urlparse.parse_qs(query)
 
         if action == 'play':
-            channel_id = self.getparam(params, 'channel_id', None)
+            channel_id = self.getparam('channel_id')
             if channel_id is None:
                 connection.dieWithError()  # Bad request
                 return
 
             stream_url = None
-            stream = P2pproxy.streamlist[channel_id]
-            if 'torrent' in stream:
-                stream_url = re.sub('^(http.+)$', lambda match: 'http://' + hostport + '/torrent/' + \
-                             urllib2.quote(match.group(0), '') + '/stream.mp4', stream['torrent'])
-            elif 'contentid' in stream:
-                stream_url = re.sub('^(http.+)$', lambda match: 'http://' + hostport + '/pid/' + \
-                             urllib2.quote(match.group(0), '') + '/stream.mp4', stream['contentid'])
+            stream_type, stream = P2pproxy.streamlist[channel_id]
+            if stream_type == 'torrent':
+                stream_url = re.sub('^(http.+)$', lambda match: '/torrent/' + \
+                             urllib2.quote(match.group(0), '') + '/stream.mp4', stream)
+            elif stream_type == 'contentid':
+                stream_url = re.sub('^([0-9a-f]{40})', lambda match: '/pid/' + \
+                             urllib2.quote(match.group(0), '') + '/stream.mp4', stream)
             connection.path = stream_url
             connection.splittedpath = stream_url.split('/')
             connection.reqtype = connection.splittedpath[1].lower()
             connection.handleRequest(False)
-        elif self.getparam(params, 'type', None) == 'm3u':
+        elif self.getparam('type') == 'm3u':
             connection.send_response(200)
             connection.send_header('Content-Type', 'application/x-mpegurl')
             connection.end_headers()
 
-            param_group = self.getparam(params, 'group', 'all')
-            param_filter = self.getparam(params, 'filter', 'all')
+            param_group = self.getparam('group')
+            param_filter = self.getparam('filter')
 
             playlistgen = PlaylistGenerator()
+            P2pproxy.logger.debug('Generating requested m3u playlist')
             for channel in P2pproxy.translationslist:
                 translation_type = channel.getAttribute('type')
-                if param_filter != 'all' and param_filter != translation_type:
+                if param_filter is not None and param_filter != translation_type:
                     continue
-                group = P2pproxy.categories[channel.getAttribute('group')]
-                if param_group != 'all' and param_group != group:
+                groupid = channel.getAttribute('group')
+                if param_group is not None and param_group != groupid:
                     continue
                 name = channel.getAttribute('name')
+                group = P2pproxy.categories[groupid]
 
                 cid = channel.getAttribute('id')
                 stream_uri = None
-                stream = P2pproxy.streamlist[cid]
-                if 'torrent' in stream:
-                    stream_uri = stream['torrent']
-                elif 'contentid' in stream:
-                   stream_uri = 'acestream://' + stream['contentid']
+                stream_type, stream = P2pproxy.streamlist[cid]
+                if stream_type == 'torrent':
+                    stream_uri = stream
+                elif stream_type == 'contentid':
+                   stream_uri = 'acestream://' + stream
 
                 logo = channel.getAttribute('logo')
                 if config.p2pproxy.fullpathlogo:
                     logo = 'http://torrent-tv.ru/uploads/' + logo
                 playlistgen.addItem({'name': name, 'url': stream_uri, 'group': group, 'logo': logo})
 
+            P2pproxy.logger.debug('Exporting')
             exported = playlistgen.exportm3u(hostport, False)
             exported = exported.encode('utf-8')
             connection.wfile.write(exported)
@@ -154,11 +158,11 @@ class P2pproxy(AceProxyPlugin):
             connection.end_headers()
             connection.wfile.write(P2pproxy.xml)
 
-    def getparam(self, params, key, default):
-        if key in params:
-            return params[key]
+    def getparam(self, key):
+        if key in self.params:
+            return self.params[key][0]
         else:
-            return default
+            return None
 
 # ============================================ [ API ] ============================================
 
