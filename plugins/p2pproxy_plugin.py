@@ -102,9 +102,9 @@ class P2pproxy(AceProxyPlugin):
             param_group = self.getparam('group')
             param_filter = self.getparam('filter')
             if param_filter is not None:
-                self.downloadPlaylist(param_filter)
+                self.downloadPlaylist(param_filter, False)
             else:
-                self.downloadPlaylist('all')
+                self.downloadPlaylist('all', False)
             playlistgen = PlaylistGenerator()
             P2pproxy.logger.debug('Generating requested m3u playlist')
             for channel in P2pproxy.translationslist:
