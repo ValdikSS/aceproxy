@@ -131,6 +131,7 @@ class P2pproxy(AceProxyPlugin):
             connection.end_headers()
 
             self.downloadPlaylist('all', True)
+            P2pproxy.logger.debug('Exporting')
             connection.wfile.write(P2pproxy.xml)
 
     def getparam(self, key):
