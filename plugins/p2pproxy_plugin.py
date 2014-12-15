@@ -124,10 +124,10 @@ class P2pproxy(AceProxyPlugin):
             P2pproxy.logger.debug('Generating requested m3u playlist')
             for channel in P2pproxy.translationslist:
                 translation_type = channel.getAttribute('type')
-                if param_filter is not None and param_filter != translation_type:
+                if param_filter is not None and param_filter != 'all' and param_filter != translation_type:
                     continue
                 groupid = channel.getAttribute('group')
-                if param_group is not None and param_group != groupid:
+                if param_group is not None and param_group != 'all' and param_group != groupid:
                     continue
                 name = channel.getAttribute('name')
                 group = P2pproxy.categories[groupid]
