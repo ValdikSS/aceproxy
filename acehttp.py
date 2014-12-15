@@ -566,7 +566,6 @@ def detectPort():
         return True
     except IOError:
         return False
-    return True
 
 def isRunning(process):
     if process.poll() is not None:

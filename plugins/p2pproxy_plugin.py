@@ -43,7 +43,6 @@ class P2pproxy(AceProxyPlugin):
 
     xml = None
     translationslist = None
-    streamlist = dict()
     categories = dict()
 
     playlisttime = None
@@ -96,7 +95,7 @@ class P2pproxy(AceProxyPlugin):
                 return
 
             stream_url = None
-            stream_type, stream = P2pproxy.streamlist[channel_id]
+            stream_type, stream = self.getSource(channel_id)
             if stream_type == 'torrent':
                 stream_url = re.sub('^(http.+)$', lambda match: '/torrent/' + \
                              urllib2.quote(match.group(0), '') + '/stream.mp4', stream)
@@ -128,17 +127,11 @@ class P2pproxy(AceProxyPlugin):
                 group = P2pproxy.categories[groupid]
 
                 cid = channel.getAttribute('id')
-                stream_uri = None
-                stream_type, stream = P2pproxy.streamlist[cid]
-                if stream_type == 'torrent':
-                    stream_uri = stream
-                elif stream_type == 'contentid':
-                   stream_uri = 'acestream://' + stream
 
                 logo = channel.getAttribute('logo')
                 if config.p2pproxy.fullpathlogo:
                     logo = 'http://torrent-tv.ru/uploads/' + logo
-                playlistgen.addItem({'name': name, 'url': stream_uri, 'group': group, 'logo': logo})
+                playlistgen.addItem({'name': name, 'url': cid, 'group': group, 'logo': logo})
 
             P2pproxy.logger.debug('Exporting')
             exported = playlistgen.exportm3u(hostport, False)
@@ -210,9 +203,6 @@ class P2pproxy(AceProxyPlugin):
         res = parseString(P2pproxy.xml).documentElement
         if self.checkRequestSuccess(res):
             P2pproxy.translationslist = res.getElementsByTagName('channel')
-            for translation in P2pproxy.translationslist:
-                cid = translation.getAttribute('id')
-                P2pproxy.streamlist[cid] = self.getSource(cid)
             categorieslist = res.getElementsByTagName('category')
             for cat in categorieslist:
                 gid = cat.getAttribute('id')
@@ -231,7 +221,7 @@ class P2pproxy(AceProxyPlugin):
         if P2pproxy.session is None:
             if not self.auth():
                 return None, None
-        #P2pproxy.logger.debug('Getting source for channel id: ' + channelId)
+        P2pproxy.logger.debug('Getting source for channel id: ' + channelId)
         try:
             xmlresult = urllib2.urlopen(
                 'http://api.torrent-tv.ru/v2_get_stream.php?session=' + P2pproxy.session +

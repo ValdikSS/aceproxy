@@ -57,6 +57,10 @@ class PlaylistGenerator(object):
             item['url'] = re.sub('^(acestream://)?(?P<pid>[0-9a-f]{40})$', 'http://' + hostport + '/pid/\\g<pid>/stream.mp4',
                                     item['url'], flags=re.MULTILINE)
 
+            # For channel id's
+            item['url'] = re.sub('^([0-9]+)$', lambda match: 'http://' + hostport + '/channels/play?id=' + match.group(0),
+                                    item['url'], flags=re.MULTILINE)
+
             itemlist += PlaylistGenerator._generatem3uline(item)
 
         return itemlist
