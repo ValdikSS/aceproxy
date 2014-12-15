@@ -579,8 +579,6 @@ def aceRunning():
             else:
                 name = process.name                # on Linux it's a variable
             if name == 'ace_engine.exe' or name == 'acestreamengine':
-                if AceStuff.ace is None:
-                    AceStuff.ace = process
                 return True
         except psutil.AccessDenied:
             # System processes
