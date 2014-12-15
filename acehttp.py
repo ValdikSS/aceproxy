@@ -548,25 +548,24 @@ def spawnAce(cmd, delay = 0):
         return False
 
 def detectPort():
-    if AceConfig.osplatform == 'Windows':
-        if not isAceRunning():
-            return False
-        import _winreg
-        import os.path
-        reg = _winreg.ConnectRegistry(None, _winreg.HKEY_CURRENT_USER)
-        try:
-            key = _winreg.OpenKey(reg, 'Software\AceStream')
-        except:
-            print "Can't find acestream!"
-            quit(1)
-        engine = _winreg.QueryValueEx(key, 'EnginePath')
-        AceStuff.acedir = os.path.dirname(engine[0])
-        try:
-            AceConfig.aceport = int(open(AceStuff.acedir + '\\acestream.port', 'r').read())
-            logger.info("Detected ace port: " + str(AceConfig.aceport))
-            return True
-        except IOError:
-            return False
+    if not aceRunning():
+        return False
+    import _winreg
+    import os.path
+    reg = _winreg.ConnectRegistry(None, _winreg.HKEY_CURRENT_USER)
+    try:
+        key = _winreg.OpenKey(reg, 'Software\AceStream')
+    except:
+        print "Can't find acestream!"
+        quit(1)
+    engine = _winreg.QueryValueEx(key, 'EnginePath')
+    AceStuff.acedir = os.path.dirname(engine[0])
+    try:
+        AceConfig.aceport = int(open(AceStuff.acedir + '\\acestream.port', 'r').read())
+        logger.info("Detected ace port: " + str(AceConfig.aceport))
+        return True
+    except IOError:
+        return False
     return True
 
 def isRunning(process):
@@ -574,13 +573,13 @@ def isRunning(process):
         return False
     return True
 
-def isAceRunning():
+def aceRunning():
     for process in psutil.get_process_list():
         try:
             name = process.name()
-            if name == "ace_engine.exe":
-                # Wait some time because ace engine refreshes the acestream.port file only after full loading...
-                gevent.sleep(AceConfig.acestartuptimeout)
+            if name == "ace_engine.exe" or 'acestreamengine' in name:
+                if AceStuff.ace is None:
+                    AceStuff.ace = process
                 return True
         except psutil.AccessDenied:
             # System processes
@@ -653,24 +652,29 @@ if AceConfig.vlcuse:
             quit(1)
 
 if AceConfig.acespawn:
-    if AceConfig.osplatform == 'Windows':
-        import _winreg
-        import os.path
-        AceStuff.aceProc = ""
-    else:
-        AceStuff.aceProc = AceConfig.acecmd.split()
-    if spawnAce(AceStuff.aceProc, 1):
-        # could be redefined internally
-        if AceConfig.acespawn:
-            logger.info("Ace Stream spawned with pid " + str(AceStuff.ace.pid))
-    else:
-        logger.error("Cannot spawn Ace Stream!")
+    if not aceRunning():
+        if AceConfig.osplatform == 'Windows':
+            import _winreg
+            import os.path
+            AceStuff.aceProc = ""
+        else:
+            AceStuff.aceProc = AceConfig.acecmd.split()
+        if spawnAce(AceStuff.aceProc, 1):
+            # could be redefined internally
+            if AceConfig.acespawn:
+                logger.info("Ace Stream spawned with pid " + str(AceStuff.ace.pid))
+        else:
+            logger.error("Cannot spawn Ace Stream!")
+            clean_proc()
+            quit(1)
+
+if AceConfig.osplatform == 'Windows':
+    # Wait some time because ace engine refreshes the acestream.port file only after full loading...
+    gevent.sleep(AceConfig.acestartuptimeout)
+    if not detectPort():
+        logger.error("Couldn't detect port! Ace Engine is not running?")
         clean_proc()
         quit(1)
-
-while not detectPort():
-    logger.info("Waiting for Ace Engine...")
-    gevent.sleep(5)
 
 try:
     logger.info("Using gevent %s" % gevent.__version__)
@@ -692,9 +696,13 @@ try:
                 del AceStuff.ace
                 if spawnAce(AceStuff.aceProc, 1):
                     logger.info("Ace Stream died, respawned it with pid " + str(AceStuff.ace.pid))
-                    while not detectPort():
-                        logger.info("Waiting for Ace Engine...")
-                        gevent.sleep(5)
+                    if AceConfig.osplatform == 'Windows':
+                        # Wait some time because ace engine refreshes the acestream.port file only after full loading...
+                        gevent.sleep(AceConfig.acestartuptimeout)
+                        if not detectPort():
+                            logger.error("Couldn't detect port! Ace Engine is not running?")
+                            clean_proc()
+                            quit(1)
                 else:
                     logger.error("Cannot spawn Ace Stream!")
                     clean_proc()
