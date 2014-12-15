@@ -95,7 +95,7 @@ class P2pproxy(AceProxyPlugin):
         self.params = urlparse.parse_qs(query)
 
         if action == 'play':
-            channel_id = self.getparam('channel_id')
+            channel_id = self.getparam('id')
             if channel_id is None:
                 connection.dieWithError()  # Bad request
                 return
