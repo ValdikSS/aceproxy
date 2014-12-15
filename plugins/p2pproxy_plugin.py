@@ -86,15 +86,10 @@ class P2pproxy(AceProxyPlugin):
 
         hostport = connection.headers['Host']
 
-        action = None
-        try:
-            action = connection.splittedpath[2]
-        except IndexError:
-            pass
         query = urlparse.urlparse(connection.path).query
         self.params = urlparse.parse_qs(query)
 
-        if action == 'play':
+        if connection.splittedpath[2].split('?')[0] == 'play':
             channel_id = self.getparam('id')
             if channel_id is None:
                 connection.dieWithError()  # Bad request
