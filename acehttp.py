@@ -9,7 +9,6 @@ import traceback
 import gevent
 import gevent.monkey
 # Monkeypatching and all the stuff
-from plugins.p2pproxy_plugin import P2pproxy
 
 gevent.monkey.patch_all()
 import glob

@@ -22,13 +22,6 @@ email = 're.place@me'
 # Insert your torrent-tv account password
 password = 'ReplaceMe'
 
-# Update session every N minutes to prevent
-# torrent-tv tracker forgetting us.
-#
-# 0 = disabled
-# Do not touch this if you don't understand what it does!
-updateevery = 60
-
 # Generate logo with full path (e.g. http://torrent-tv.ru/uploads/ornzQpk6WCW6xk0lyBhlwqH8u2QyU7.png)
 # or put only the logo file name (e.g. ornzQpk6WCW6xk0lyBhlwqH8u2QyU7.png)
 # This option is only for m3u playlists.

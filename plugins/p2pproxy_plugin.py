@@ -15,8 +15,6 @@ What is this plugin for?
     set the httpport to 8081
     set the vlcoutport to some other port (8082 for example)
 '''
-import gevent
-
 __author__ = 'miltador'
 
 import logging
@@ -45,40 +43,31 @@ class P2pproxy(AceProxyPlugin):
     translationslist = None
     categories = dict()
 
-    playlisttime = None
+    sessionupdatetime = None
 
     def __init__(self, AceConfig, AceStuff):
         super(P2pproxy, self).__init__(AceConfig, AceStuff)
-        if config.p2pproxy.updateevery:
-            gevent.spawn(self.sessionUpdater)
 
-    def sessionUpdater(self):
-        while True:
-            gevent.sleep(config.p2pproxy.updateevery * 60)
-            self.auth()
+    def sessionTimedUpdater(self):
+        self.auth()
+        P2pproxy.sessionupdatetime = int(time.time())
 
-    def downloadPlaylist(self):
-        P2pproxy.logger.debug('Going to update p2pproxy playlist')
-        P2pproxy.logger.debug('This gonna take some time...')
+    def downloadPlaylist(self, trans_type, raw_only):
         # First of all, authorization and getting session
         if P2pproxy.session is None:  # we need to auth only once
             if not self.auth():
                 return False
 
         # Now we get translations and categories lists
-        if not self.getTranslations():
+        if not self.getTranslations(trans_type, raw_only):
             return False
-
-        P2pproxy.logger.debug('Successfully downloaded playlist through torrent-tv API')
-
-        P2pproxy.playlisttime = int(time.time())
         return True
 
     def handle(self, connection):
         P2pproxy.logger.debug('Handling request')
         # 30 minutes cache
-        if P2pproxy.translationslist is None or (int(time.time()) - P2pproxy.playlisttime > 30 * 60):
-            if not self.downloadPlaylist():
+        if int(time.time()) - P2pproxy.sessionupdatetime > 60 * 60:
+            if not self.auth():
                 connection.dieWithError()
                 return
 
@@ -112,13 +101,13 @@ class P2pproxy(AceProxyPlugin):
 
             param_group = self.getparam('group')
             param_filter = self.getparam('filter')
-
+            if param_filter is not None:
+                self.downloadPlaylist(param_filter)
+            else:
+                self.downloadPlaylist('all')
             playlistgen = PlaylistGenerator()
             P2pproxy.logger.debug('Generating requested m3u playlist')
             for channel in P2pproxy.translationslist:
-                translation_type = channel.getAttribute('type')
-                if param_filter is not None and param_filter != 'all' and param_filter != translation_type:
-                    continue
                 groupid = channel.getAttribute('group')
                 if param_group is not None and param_group != 'all' and param_group != groupid:
                     continue
@@ -137,12 +126,11 @@ class P2pproxy(AceProxyPlugin):
             exported = exported.encode('utf-8')
             connection.wfile.write(exported)
         else:
-            if P2pproxy.xml is None:
-                connection.dieWithError()
-                return
             connection.send_response(200)
             connection.send_header('Content-Type', 'text/xml')
             connection.end_headers()
+
+            self.downloadPlaylist('all', True)
             connection.wfile.write(P2pproxy.xml)
 
     def getparam(self, key):
@@ -161,11 +149,11 @@ class P2pproxy(AceProxyPlugin):
         success = res.getElementsByTagName('success')[0].childNodes[0].data
         if success == 0 or success is None:
             error = res.getElementsByTagName('error')[0].childNodes[0].data
-            P2pproxy.logger.error('Faild to perform the torrent-tv API request, reason: ' +
+            P2pproxy.logger.error('Failed to perform the torrent-tv API request, reason: ' +
                                   error)
             if error == 'incorrect':  # trying to fix
-                if not self.auth():
-                    return False
+                P2pproxy.logger.error('Incorrect login data, check config file!')
+                return False
         return True
 
     '''
@@ -189,27 +177,29 @@ class P2pproxy(AceProxyPlugin):
         else:
             return False
 
-    def getTranslations(self):
+    def getTranslations(self, trans_type, raw_only):
         try:
             P2pproxy.logger.debug('Trying to get the playlist from torrent-tv')
             P2pproxy.xml = urllib2.urlopen(
                 'http://api.torrent-tv.ru/v2_alltranslation.php?session=' + P2pproxy.session +
-                '&type=all&typeresult=xml', timeout=10).read()
+                '&type=' + trans_type + '&typeresult=xml', timeout=10).read()
         except:
             P2pproxy.logger.error("Can't access to API! Maybe torrent-tv is down")
             return False
 
         res = parseString(P2pproxy.xml).documentElement
-        if self.checkRequestSuccess(res):
-            P2pproxy.translationslist = res.getElementsByTagName('channel')
-            categorieslist = res.getElementsByTagName('category')
-            for cat in categorieslist:
-                gid = cat.getAttribute('id')
-                name = cat.getAttribute('name')
-                P2pproxy.categories[gid] = name
-            return True
-        else:
-            return False
+        if not raw_only:
+            if self.checkRequestSuccess(res):
+                P2pproxy.translationslist = res.getElementsByTagName('channel')
+                categorieslist = res.getElementsByTagName('category')
+                for cat in categorieslist:
+                    gid = cat.getAttribute('id')
+                    name = cat.getAttribute('name')
+                    P2pproxy.categories[gid] = name
+                return True
+            else:
+                return False
+        return True
 
     '''
     Gets the source for Ace Stream by channel id
