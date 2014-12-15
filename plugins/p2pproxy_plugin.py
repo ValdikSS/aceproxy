@@ -144,7 +144,7 @@ class P2pproxy(AceProxyPlugin):
             exported = playlistgen.exportm3u(hostport, False)
             exported = exported.encode('utf-8')
             connection.wfile.write(exported)
-        elif action is None or action == '':
+        else:
             if P2pproxy.xml is None:
                 connection.dieWithError()
                 return
