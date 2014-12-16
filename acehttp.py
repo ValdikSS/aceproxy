@@ -512,7 +512,19 @@ if AceConfig.vlcspawn or AceConfig.acespawn:
 # Spawning procedures
 def spawnVLC(cmd, delay = 0):
     try:
-        AceStuff.vlc = gevent.subprocess.Popen(cmd, stdout=DEVNULL, stderr=DEVNULL)
+        if AceConfig.osplatform == 'Windows' and AceConfig.vlcuseaceplayer:
+            import _winreg
+            import os.path
+            reg = _winreg.ConnectRegistry(None, _winreg.HKEY_CURRENT_USER)
+            try:
+                key = _winreg.OpenKey(reg, 'Software\AceStream')
+            except:
+                print "Can't find AceStream!"
+                quit(1)
+            dir = _winreg.QueryValueEx(key, 'InstallDir')
+            playerdir = os.path.dirname(dir[0] + '\\player\\')
+            cmd[0] = playerdir + '\\' + cmd[0]
+        AceStuff.vlc = psutil.Popen(cmd, stdout=DEVNULL, stderr=DEVNULL)
         gevent.sleep(delay)
         return True
     except:
@@ -540,50 +552,53 @@ def spawnAce(cmd, delay = 0):
         AceStuff.acedir = os.path.dirname(engine[0])
         cmd = engine[0].split()
     try:
-        AceStuff.ace = gevent.subprocess.Popen(cmd, stdout=DEVNULL, stderr=DEVNULL)
+        AceStuff.ace = psutil.Popen(cmd, stdout=DEVNULL, stderr=DEVNULL)
         gevent.sleep(delay)
         return True
     except:
         return False
 
 def detectPort():
-    if not aceRunning():
-        return False
+    if not isRunning(AceStuff.ace):
+        logger.error("Couldn't detect port! Ace Engine is not running?")
+        clean_proc()
+        quit(1)
     import _winreg
     import os.path
     reg = _winreg.ConnectRegistry(None, _winreg.HKEY_CURRENT_USER)
     try:
         key = _winreg.OpenKey(reg, 'Software\AceStream')
     except:
-        print "Can't find acestream!"
+        print "Can't find AceStream!"
         quit(1)
     engine = _winreg.QueryValueEx(key, 'EnginePath')
     AceStuff.acedir = os.path.dirname(engine[0])
     try:
         AceConfig.aceport = int(open(AceStuff.acedir + '\\acestream.port', 'r').read())
         logger.info("Detected ace port: " + str(AceConfig.aceport))
-        return True
     except IOError:
-        return False
+        logger.error("Couldn't detect port! acestream.port file doesn't exist?")
+        clean_proc()
+        quit(1)
 
 def isRunning(process):
-    if process.poll() is not None:
-        return False
-    return True
-
-def aceRunning():
-    for process in psutil.get_process_list():
-        try:
-            if AceConfig.osplatform == 'Windows':  # wtf? on Windows process.name() is method
-                name = process.name()
-            else:
-                name = process.name                # on Linux it's a variable
-            if name == 'ace_engine.exe' or name == 'acestreamengine':
-                return True
-        except psutil.AccessDenied:
-            # System processes
-            pass
+    if process.is_running() and process.status() != psutil.STATUS_ZOMBIE:
+        return True
     return False
+
+def findProcess(name):
+    for proc in psutil.process_iter():
+        try:
+            pinfo = proc.as_dict(attrs=['pid', 'name'])
+            if pinfo['name'] == name:
+                return pinfo['pid']
+        except psutil.AccessDenied:
+            # System process
+            pass
+        except psutil.NoSuchProcess:
+            # Process terminated
+            pass
+    return None
 
 def clean_proc():
     # Trying to close all spawned processes gracefully
@@ -638,20 +653,34 @@ except AttributeError:
     pass
 
 if AceConfig.vlcuse:
-    if AceConfig.vlcspawn:
-        AceStuff.vlcProc = AceConfig.vlccmd.split()
-        if spawnVLC(AceStuff.vlcProc, AceConfig.vlcspawntimeout) and connectVLC():
-            logger.info("VLC spawned with pid " + str(AceStuff.vlc.pid))
+    if AceConfig.osplatform == 'Windows':
+        if AceConfig.vlcuseaceplayer:
+            name = 'ace_player.exe'
         else:
-            logger.error("Cannot spawn VLC!")
-            quit(1)
+            name = 'vlc.exe'
     else:
-        if not connectVLC():
+        name = 'vlc'
+    vlc_pid = findProcess(name)
+    if vlc_pid is None:
+        if AceConfig.vlcspawn:
+            AceStuff.vlcProc = AceConfig.vlccmd.split()
+            if spawnVLC(AceStuff.vlcProc, AceConfig.vlcspawntimeout) and connectVLC():
+                logger.info("VLC spawned with pid " + str(AceStuff.vlc.pid))
+        else:
+            logger.error('Cannot find VLC!')
             clean_proc()
             quit(1)
+    else:
+        AceStuff.vlc = psutil.Process(vlc_pid)
+        connectVLC()
 
-if AceConfig.acespawn:
-    if not aceRunning():
+if AceConfig.osplatform == 'Windows':
+    name = 'ace_engine.exe'
+else:
+    name = 'acestreamengine'
+ace_pid = findProcess(name)
+if ace_pid is None:
+    if AceConfig.acespawn:
         if AceConfig.osplatform == 'Windows':
             import _winreg
             import os.path
@@ -662,18 +691,18 @@ if AceConfig.acespawn:
             # could be redefined internally
             if AceConfig.acespawn:
                 logger.info("Ace Stream spawned with pid " + str(AceStuff.ace.pid))
-        else:
-            logger.error("Cannot spawn Ace Stream!")
-            clean_proc()
-            quit(1)
-
-if AceConfig.osplatform == 'Windows':
-    # Wait some time because ace engine refreshes the acestream.port file only after full loading...
-    gevent.sleep(AceConfig.acestartuptimeout)
-    if not detectPort():
-        logger.error("Couldn't detect port! Ace Engine is not running?")
+                if AceConfig.osplatform == 'Windows':
+                    # Wait some time because ace engine refreshes the acestream.port file only after full loading...
+                    gevent.sleep(AceConfig.acestartuptimeout)
+    else:
+        logger.error("Cannot find Ace Stream!")
         clean_proc()
         quit(1)
+else:
+    AceStuff.ace = psutil.Process(ace_pid)
+
+if AceConfig.osplatform == 'Windows':
+    detectPort()
 
 try:
     logger.info("Using gevent %s" % gevent.__version__)
@@ -681,7 +710,7 @@ try:
          logger.info("Using VLC %s" % AceStuff.vlcclient._vlcver)
     logger.info("Server started.")
     while True:
-        if AceConfig.vlcspawn and AceConfig.vlcuse:
+        if AceConfig.vlcuse:
             if not isRunning(AceStuff.vlc):
                 del AceStuff.vlc
                 if spawnVLC(AceStuff.vlcProc, AceConfig.vlcspawntimeout) and connectVLC():
@@ -690,22 +719,18 @@ try:
                     logger.error("Cannot spawn VLC!")
                     clean_proc()
                     quit(1)
-        if AceConfig.acespawn:
-            if not isRunning(AceStuff.ace):
-                del AceStuff.ace
-                if spawnAce(AceStuff.aceProc, 1):
-                    logger.info("Ace Stream died, respawned it with pid " + str(AceStuff.ace.pid))
-                    if AceConfig.osplatform == 'Windows':
-                        # Wait some time because ace engine refreshes the acestream.port file only after full loading...
-                        gevent.sleep(AceConfig.acestartuptimeout)
-                        if not detectPort():
-                            logger.error("Couldn't detect port! Ace Engine is not running?")
-                            clean_proc()
-                            quit(1)
-                else:
-                    logger.error("Cannot spawn Ace Stream!")
-                    clean_proc()
-                    quit(1)
+        if not isRunning(AceStuff.ace):
+            del AceStuff.ace
+            if spawnAce(AceStuff.aceProc, 1):
+                logger.info("Ace Stream died, respawned it with pid " + str(AceStuff.ace.pid))
+                if AceConfig.osplatform == 'Windows':
+                    # Wait some time because ace engine refreshes the acestream.port file only after full loading...
+                    gevent.sleep(AceConfig.acestartuptimeout)
+                    detectPort()
+            else:
+                logger.error("Cannot spawn Ace Stream!")
+                clean_proc()
+                quit(1)
         # Return to our server tasks
         server.handle_request()
 except (KeyboardInterrupt, SystemExit):
