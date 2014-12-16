@@ -498,14 +498,6 @@ if AceConfig.osplatform != 'Windows' and AceConfig.aceproxyuser and os.getuid() 
 # Creating ClientCounter
 AceStuff.clientcounter = ClientCounter()
 
-# We need gevent >= 1.0.0 to use gevent.subprocess
-if AceConfig.acespawn or AceConfig.vlcspawn:
-    try:
-        gevent.monkey.patch_subprocess()
-    except:
-        logger.error("Cannot spawn anything without gevent 1.0.0 or higher.")
-        quit(1)
-
 if AceConfig.vlcspawn or AceConfig.acespawn:
     DEVNULL = open(os.devnull, 'wb')
 

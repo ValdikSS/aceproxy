@@ -12,7 +12,6 @@ class AceConfig(object):
     # ----------------------------------------------------
     #
     # Spawn Ace Stream Engine automatically
-    # Need gevent 1.0.0 or higher
     acespawn = False
     # Ace Stream cmd line (use `--log-file filepath` to write log)
     # Autodetect for Windows
@@ -89,7 +88,6 @@ class AceConfig(object):
     # to point ace_player.exe, not vlc.exe!!!
     vlcuseaceplayer = False
     # Spawn VLC automaticaly
-    # Need gevent 1.0.0 or higher
     vlcspawn = False
     # VLC cmd line (use `--file-logging --logfile=filepath` to write log)
     # Please use the full path to executable for Windows, for example - C:\\Program Files\\VideoLAN\\VLC\\vlc.exe
