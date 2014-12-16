@@ -687,18 +687,13 @@ if ace_pid is None:
             # could be redefined internally
             if AceConfig.acespawn:
                 logger.info("Ace Stream spawned with pid " + str(AceStuff.ace.pid))
-                if AceConfig.osplatform == 'Windows':
-                    # Wait some time because ace engine refreshes the acestream.port file only after full loading...
-                    gevent.sleep(AceConfig.acestartuptimeout)
-    else:
-        logger.error("Cannot find Ace Stream!")
-        clean_proc()
-        quit(1)
 else:
     AceStuff.ace = psutil.Process(ace_pid)
 
 if AceConfig.osplatform == 'Windows':
     detectPort()
+    # Wait some time because ace engine refreshes the acestream.port file only after full loading...
+    gevent.sleep(AceConfig.acestartuptimeout)
 
 try:
     logger.info("Using gevent %s" % gevent.__version__)
@@ -707,7 +702,7 @@ try:
          logger.info("Using VLC %s" % AceStuff.vlcclient._vlcver)
     logger.info("Server started.")
     while True:
-        if AceConfig.vlcuse:
+        if AceConfig.vlcuse and AceConfig.vlcspawn:
             if not isRunning(AceStuff.vlc):
                 del AceStuff.vlc
                 if spawnVLC(AceStuff.vlcProc, AceConfig.vlcspawntimeout) and connectVLC():
@@ -716,7 +711,7 @@ try:
                     logger.error("Cannot spawn VLC!")
                     clean_proc()
                     quit(1)
-        if not isRunning(AceStuff.ace):
+        if AceConfig.acespawn and not isRunning(AceStuff.ace):
             del AceStuff.ace
             if spawnAce(AceStuff.aceProc, 1):
                 logger.info("Ace Stream died, respawned it with pid " + str(AceStuff.ace.pid))
