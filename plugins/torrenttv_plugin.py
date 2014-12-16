@@ -23,8 +23,8 @@ class Torrenttv(AceProxyPlugin):
     playlisttime = None
 
     def __init__(self, AceConfig, AceStuff):
-        self.downloadPlaylist()
         if config.torrenttv.updateevery:
+            self.downloadPlaylist()
             gevent.spawn(self.playlistTimedDownloader)
 
     def playlistTimedDownloader(self):
