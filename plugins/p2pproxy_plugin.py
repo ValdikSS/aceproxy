@@ -126,15 +126,15 @@ class P2pproxy(AceProxyPlugin):
             exported = exported.encode('utf-8')
             connection.wfile.write(exported)
         else:
+            self.downloadPlaylist('all', True)
+            P2pproxy.logger.debug('Exporting')
+
             connection.send_response(200)
             connection.send_header('Access-Control-Allow-Origin', '*')
             connection.send_header('Connection', 'close')
             connection.send_header('Content-Length', str(len(P2pproxy.xml)))
             connection.send_header('Content-Type', 'text/xml;charset=utf-8')
             connection.end_headers()
-
-            self.downloadPlaylist('all', True)
-            P2pproxy.logger.debug('Exporting')
             connection.wfile.write(P2pproxy.xml)
 
     def getparam(self, key):
