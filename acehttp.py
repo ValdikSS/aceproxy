@@ -691,9 +691,9 @@ else:
     AceStuff.ace = psutil.Process(ace_pid)
 
 if AceConfig.osplatform == 'Windows':
-    detectPort()
     # Wait some time because ace engine refreshes the acestream.port file only after full loading...
     gevent.sleep(AceConfig.acestartuptimeout)
+    detectPort()
 
 try:
     logger.info("Using gevent %s" % gevent.__version__)
