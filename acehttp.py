@@ -582,8 +582,12 @@ def detectPort():
         quit(1)
 
 def isRunning(process):
-    if process.is_running() and process.status() != psutil.STATUS_ZOMBIE:
-        return True
+    if psutil.version_info[0] >= 2:
+        if process.is_running() and process.status() != psutil.STATUS_ZOMBIE:
+            return True
+    else:  # for older versions of psutil
+        if process.is_running() and process.status != psutil.STATUS_ZOMBIE:
+            return True
     return False
 
 def findProcess(name):
@@ -706,6 +710,7 @@ if AceConfig.osplatform == 'Windows':
 
 try:
     logger.info("Using gevent %s" % gevent.__version__)
+    logger.info("Using psutil %s" % psutil.__version__)
     if AceConfig.vlcuse:
          logger.info("Using VLC %s" % AceStuff.vlcclient._vlcver)
     logger.info("Server started.")
