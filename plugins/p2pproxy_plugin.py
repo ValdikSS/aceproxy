@@ -31,7 +31,7 @@ import config.p2pproxy
 
 
 class P2pproxy(AceProxyPlugin):
-    handlers = ('channels', 'archive')
+    handlers = ('channels', 'archive', 'xbmc.pvr')
 
     logger = logging.getLogger('plugin_p2pproxy')
 
@@ -139,6 +139,18 @@ class P2pproxy(AceProxyPlugin):
                     self.downloadPlaylist(param_filter, True)
                 else:
                     self.downloadPlaylist('all', True)
+                P2pproxy.logger.debug('Exporting')
+
+                connection.send_response(200)
+                connection.send_header('Access-Control-Allow-Origin', '*')
+                connection.send_header('Connection', 'close')
+                connection.send_header('Content-Length', str(len(P2pproxy.xml)))
+                connection.send_header('Content-Type', 'text/xml;charset=utf-8')
+                connection.end_headers()
+                connection.wfile.write(P2pproxy.xml)
+        elif connection.reqtype == 'xbmc.pvr':
+            if len(connection.splittedpath) == 3 and connection.splittedpath[2] == 'playlist':
+                self.downloadPlaylist('all', True)
                 P2pproxy.logger.debug('Exporting')
 
                 connection.send_response(200)
