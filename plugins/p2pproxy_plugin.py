@@ -134,7 +134,11 @@ class P2pproxy(AceProxyPlugin):
                 exported = exported.encode('utf-8')
                 connection.wfile.write(exported)
             else:
-                self.downloadPlaylist('all', True)
+                param_filter = self.getparam('filter')
+                if param_filter is not None:
+                    self.downloadPlaylist(param_filter, True)
+                else:
+                    self.downloadPlaylist('all', True)
                 P2pproxy.logger.debug('Exporting')
 
                 connection.send_response(200)
