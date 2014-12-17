@@ -188,7 +188,6 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             return
 
         # Handle request with plugin handler
-        # /channels/play request should not be handled by plugin
         if self.reqtype in AceStuff.pluginshandlers:
             try:
                 AceStuff.pluginshandlers.get(self.reqtype).handle(self)
