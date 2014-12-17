@@ -48,14 +48,8 @@ class P2pproxy(AceProxyPlugin):
 
     categories = dict()
 
-    sessionupdatetime = None
-
     def __init__(self, AceConfig, AceStuff):
         super(P2pproxy, self).__init__(AceConfig, AceStuff)
-
-    def sessionTimedUpdater(self):
-        self.auth()
-        P2pproxy.sessionupdatetime = int(time.time())
 
     def downloadPlaylist(self, trans_type, raw_only=False):
         # First of all, authorization and getting session
@@ -70,11 +64,9 @@ class P2pproxy(AceProxyPlugin):
 
     def handle(self, connection):
         P2pproxy.logger.debug('Handling request')
-        # 30 minutes cache
-        if P2pproxy.sessionupdatetime is None or int(time.time()) - P2pproxy.sessionupdatetime > 60 * 60:
-            if not self.auth():
-                connection.dieWithError()
-                return
+        if not self.auth():
+            connection.dieWithError()
+            return
 
         hostport = connection.headers['Host']
 
