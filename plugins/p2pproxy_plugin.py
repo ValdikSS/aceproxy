@@ -153,6 +153,17 @@ class P2pproxy(AceProxyPlugin):
                 connection.end_headers()
                 connection.wfile.write(P2pproxy.xml)
         elif connection.reqtype == 'archive':
+            if len(connection.splittedpath) == 3 and connection.splittedpath[2] == 'channels':
+                self.getChannels()
+                P2pproxy.logger.debug('Exporting')
+
+                connection.send_response(200)
+                connection.send_header('Access-Control-Allow-Origin', '*')
+                connection.send_header('Connection', 'close')
+                connection.send_header('Content-Length', str(len(P2pproxy.xml)))
+                connection.send_header('Content-Type', 'text/xml;charset=utf-8')
+                connection.end_headers()
+                connection.wfile.write(P2pproxy.xml)
             if len(connection.splittedpath) == 3 and connection.splittedpath[2].split('?')[0] == 'play':
                 record_id = self.getparam('id')
                 if record_id is None:
@@ -340,6 +351,10 @@ class P2pproxy(AceProxyPlugin):
             else:
                 return False
         return True
+
+    '''
+    Gets the channels list for archive
+    '''
 
     def getChannels(self):
         try:
