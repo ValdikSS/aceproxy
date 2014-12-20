@@ -21,7 +21,6 @@ import logging
 import re
 import urllib2
 import urlparse
-import time
 from datetime import date
 from xml.dom.minidom import parseString
 
@@ -140,7 +139,7 @@ class P2pproxy(AceProxyPlugin):
                 connection.send_header('Content-Type', 'text/xml;charset=utf-8')
                 connection.end_headers()
                 connection.wfile.write(P2pproxy.xml)
-        elif connection.reqtype == 'xbmc.pvr':
+        elif connection.reqtype == 'xbmc.pvr':  # same as /channels request
             if len(connection.splittedpath) == 3 and connection.splittedpath[2] == 'playlist':
                 self.downloadPlaylist('all', True)
                 P2pproxy.logger.debug('Exporting')
