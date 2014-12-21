@@ -22,6 +22,7 @@ import re
 import urllib2
 import urlparse
 from datetime import date
+import time
 from xml.dom.minidom import parseString
 
 from modules.PluginInterface import AceProxyPlugin
@@ -47,8 +48,14 @@ class P2pproxy(AceProxyPlugin):
 
     categories = dict()
 
+    sessionupdatetime = None
+
     def __init__(self, AceConfig, AceStuff):
         super(P2pproxy, self).__init__(AceConfig, AceStuff)
+
+    def sessionTimedUpdater(self):
+        self.auth()
+        P2pproxy.sessionupdatetime = int(time.time())
 
     def downloadPlaylist(self, trans_type, raw_only=False):
         # First of all, authorization and getting session
@@ -63,9 +70,9 @@ class P2pproxy(AceProxyPlugin):
 
     def handle(self, connection):
         P2pproxy.logger.debug('Handling request')
-        if not self.auth():
-            connection.dieWithError()
-            return
+        # 60 min session cache
+        if P2pproxy.sessionupdatetime is None or int(time.time()) - P2pproxy.sessionupdatetime > 60 * 60:
+            self.sessionTimedUpdater()
 
         hostport = connection.headers['Host']
 
@@ -76,8 +83,20 @@ class P2pproxy(AceProxyPlugin):
             if len(connection.splittedpath) == 3 and connection.splittedpath[2].split('?')[0] == 'play':
                 record_id = self.getparam('id')
                 if record_id is None:
-                    connection.dieWithError()  # Bad request
-                    return
+                    # /channels/play?id=&_=[epoch timestamp] is Torrent-TV widget proxy check
+                    # P2pProxy simply closes connection on this request, so do we
+                    if self.getparam('_') is not None:
+                        P2pproxy.logger.debug('Status check')
+                        connection.send_response(200)
+                        connection.send_header('Access-Control-Allow-Origin', '*')
+                        connection.send_header('Connection', 'close')
+                        connection.send_header('Content-Type', 'text/plain;charset=utf-8')
+                        connection.send_header('Server', 'P2pProxy/1.0.3.1 AceProxy')
+                        connection.wfile.write('\r\n')
+                        return
+                    else:
+                        connection.dieWithError()  # Bad request
+                        return
 
                 stream_url = None
                 stream_type, stream = self.getSource(record_id)
@@ -275,7 +294,8 @@ class P2pproxy(AceProxyPlugin):
             P2pproxy.logger.error('Failed to perform the torrent-tv API request, reason: ' +
                                   error)
             if error == 'incorrect':  # trying to fix
-                P2pproxy.logger.error('Incorrect login data, check config file!')
+                P2pproxy.logger.debug('Got response error, maybe time to update session')
+                self.sessionupdatetime = None
                 return False
         return True
 
@@ -285,7 +305,7 @@ class P2pproxy(AceProxyPlugin):
 
     def auth(self):
         try:
-            P2pproxy.logger.debug('Trying to access torrent-tv API')
+            P2pproxy.logger.debug('Trying to auth on torrent-tv')
             xmlresult = urllib2.urlopen(
                 'http://api.torrent-tv.ru/v2_auth.php?username=' + P2pproxy.email + '&password=' + P2pproxy.password +
                 '&application=tsproxy&typeresult=xml', timeout=10).read()
