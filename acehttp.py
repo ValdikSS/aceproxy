@@ -598,17 +598,15 @@ def findProcess(name):
 def clean_proc():
     # Trying to close all spawned processes gracefully
     if AceConfig.vlcspawn and isRunning(AceStuff.vlc):
-        try:
-            AceStuff.vlc.terminate()
-            AceStuff.vlc.wait(1)
-        except psutil.TimeoutExpired:
+        AceStuff.vlc.terminate()
+        gevent.sleep(1)
+        if isRunning(AceStuff.vlc):
             # or not :)
             AceStuff.vlc.kill()
     if AceConfig.acespawn and isRunning(AceStuff.ace):
-        try:
-            AceStuff.ace.terminate()
-            AceStuff.ace.wait(1)
-        except psutil.TimeoutExpired:
+        AceStuff.ace.terminate()
+        gevent.sleep(1)
+        if isRunning(AceStuff.ace):
             AceStuff.ace.kill()
         # for windows, subprocess.terminate() is just an alias for kill(), so we have to delete the acestream port file manually
         if AceConfig.osplatform == 'Windows' and os.path.isfile(AceStuff.acedir + '\\acestream.port'):

@@ -84,7 +84,7 @@ class P2pproxy(AceProxyPlugin):
                 record_id = self.getparam('id')
                 if record_id is None:
                     # /channels/play?id=&_=[epoch timestamp] is Torrent-TV widget proxy check
-                    # P2pProxy simply closes connection on this request, so do we
+                    # P2pProxy simply closes connection on this request sending Server header, so do we
                     if self.getparam('_') is not None:
                         P2pproxy.logger.debug('Status check')
                         connection.send_response(200)
