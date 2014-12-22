@@ -656,7 +656,7 @@ if AceConfig.vlcuse:
     else:
         name = 'vlc'
     vlc_pid = findProcess(name)
-    if vlc_pid is None:
+    if not vlc_pid:
         if AceConfig.vlcspawn:
             AceStuff.vlcProc = AceConfig.vlccmd.split()
             if spawnVLC(AceStuff.vlcProc, AceConfig.vlcspawntimeout) and connectVLC():
@@ -674,7 +674,7 @@ if AceConfig.osplatform == 'Windows':
 else:
     name = 'acestreamengine'
 ace_pid = findProcess(name)
-if ace_pid is None:
+if not ace_pid:
     if AceConfig.acespawn:
         if AceConfig.osplatform == 'Windows':
             import _winreg

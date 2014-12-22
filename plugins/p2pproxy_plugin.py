@@ -59,7 +59,7 @@ class P2pproxy(AceProxyPlugin):
 
     def downloadPlaylist(self, trans_type, raw_only=False):
         # First of all, authorization and getting session
-        if P2pproxy.session is None:  # we need to auth only once
+        if not P2pproxy.session:  # we need to auth only once
             if not self.auth():
                 return False
 
@@ -71,7 +71,7 @@ class P2pproxy(AceProxyPlugin):
     def handle(self, connection):
         P2pproxy.logger.debug('Handling request')
         # 60 min session cache
-        if P2pproxy.sessionupdatetime is None or int(time.time()) - P2pproxy.sessionupdatetime > 60 * 60:
+        if not P2pproxy.sessionupdatetime or int(time.time()) - P2pproxy.sessionupdatetime > 60 * 60:
             self.sessionTimedUpdater()
 
         hostport = connection.headers['Host']
@@ -82,7 +82,7 @@ class P2pproxy(AceProxyPlugin):
         if connection.reqtype == 'channels':
             if len(connection.splittedpath) == 3 and connection.splittedpath[2].split('?')[0] == 'play':
                 record_id = self.getparam('id')
-                if record_id is None:
+                if not record_id:
                     # /channels/play?id=&_=[epoch timestamp] is Torrent-TV widget proxy check
                     # P2pProxy simply closes connection on this request sending Server header, so do we
                     if self.getparam('_') is not None:
@@ -184,7 +184,7 @@ class P2pproxy(AceProxyPlugin):
                 connection.wfile.write(P2pproxy.xml)
             if len(connection.splittedpath) == 3 and connection.splittedpath[2].split('?')[0] == 'play':
                 record_id = self.getparam('id')
-                if record_id is None:
+                if not record_id:
                     connection.dieWithError()  # Bad request
                     return
 
@@ -208,7 +208,7 @@ class P2pproxy(AceProxyPlugin):
                 connection.end_headers()
 
                 param_date = self.getparam('date')
-                if param_date is None:
+                if not param_date:
                     d = date.today()
                 else:
                     try:
@@ -219,7 +219,7 @@ class P2pproxy(AceProxyPlugin):
                         connection.dieWithError()
                         return
                 param_channel = self.getparam('channel_id')
-                if param_channel is None:
+                if not param_channel:
                     param_channel = 'all'
 
                 self.getRecords(param_channel, d.strftime('%d-%m-%Y'))
@@ -251,7 +251,7 @@ class P2pproxy(AceProxyPlugin):
                 connection.wfile.write(exported)
             else:
                 param_date = self.getparam('date')
-                if param_date is None:
+                if not param_date:
                     d = date.today()
                 else:
                     try:
@@ -262,7 +262,7 @@ class P2pproxy(AceProxyPlugin):
                         connection.dieWithError()
                         return
                 param_channel = self.getparam('channel_id')
-                if param_channel is None:
+                if not param_channel:
                     param_channel = 'all'
                 self.getRecords(param_channel, d.strftime('%d-%m-%Y'), True)
                 P2pproxy.logger.debug('Exporting')
@@ -289,7 +289,7 @@ class P2pproxy(AceProxyPlugin):
 
     def checkRequestSuccess(self, res):
         success = res.getElementsByTagName('success')[0].childNodes[0].data
-        if success == 0 or success is None:
+        if success == 0 or not success:
             error = res.getElementsByTagName('error')[0].childNodes[0].data
             P2pproxy.logger.error('Failed to perform the torrent-tv API request, reason: ' +
                                   error)
@@ -398,7 +398,7 @@ class P2pproxy(AceProxyPlugin):
     '''
 
     def getSource(self, channelId):
-        if P2pproxy.session is None:
+        if not P2pproxy.session:
             if not self.auth():
                 return None, None
         P2pproxy.logger.debug('Getting source for channel id: ' + channelId)
@@ -420,7 +420,7 @@ class P2pproxy(AceProxyPlugin):
     Gets stream source for archive record
     '''
     def getStreamSource(self, record_id):
-        if P2pproxy.session is None:
+        if not P2pproxy.session:
             if not self.auth():
                 return None, None
         P2pproxy.logger.debug('Getting stream for record id: ' + record_id)
