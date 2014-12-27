@@ -27,16 +27,13 @@ from xml.dom.minidom import parseString
 
 from modules.PluginInterface import AceProxyPlugin
 from modules.PlaylistGenerator import PlaylistGenerator
-import config.p2pproxy
+import config.p2pproxy as config
 
 
 class P2pproxy(AceProxyPlugin):
     handlers = ('channels', 'archive', 'xbmc.pvr')
 
     logger = logging.getLogger('plugin_p2pproxy')
-
-    email = config.p2pproxy.email
-    password = config.p2pproxy.password
 
     session = None
 
@@ -307,7 +304,7 @@ class P2pproxy(AceProxyPlugin):
         try:
             P2pproxy.logger.debug('Trying to auth on torrent-tv')
             xmlresult = urllib2.urlopen(
-                'http://api.torrent-tv.ru/v2_auth.php?username=' + P2pproxy.email + '&password=' + P2pproxy.password +
+                'http://api.torrent-tv.ru/v2_auth.php?username=' + config.email + '&password=' + config.password +
                 '&application=tsproxy&typeresult=xml', timeout=10).read()
         except:
             P2pproxy.logger.error("Can't auth! Maybe torrent-tv is down")

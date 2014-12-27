@@ -9,7 +9,7 @@ import time
 import gevent
 from modules.PluginInterface import AceProxyPlugin
 from modules.PlaylistGenerator import PlaylistGenerator
-import config.torrenttv
+import config.torrenttv as config
 
 
 class Torrenttv(AceProxyPlugin):
@@ -18,25 +18,24 @@ class Torrenttv(AceProxyPlugin):
     handlers = ('torrenttv', 'ttvplaylist')
 
     logger = logging.getLogger('plugin_torrenttv')
-    url = config.torrenttv.url
     playlist = None
     playlisttime = None
 
     def __init__(self, AceConfig, AceStuff):
-        if config.torrenttv.updateevery:
+        if config.updateevery:
             self.downloadPlaylist()
             gevent.spawn(self.playlistTimedDownloader)
 
     def playlistTimedDownloader(self):
         while True:
-            gevent.sleep(config.torrenttv.updateevery * 60)
+            gevent.sleep(config.updateevery * 60)
             self.downloadPlaylist()
 
     def downloadPlaylist(self):
         try:
             Torrenttv.logger.debug('Trying to download playlist')
             Torrenttv.playlist = urllib2.urlopen(
-                Torrenttv.url, timeout=10).read()
+                config.url, timeout=10).read()
             Torrenttv.playlisttime = int(time.time())
         except:
             Torrenttv.logger.error("Can't download playlist!")
