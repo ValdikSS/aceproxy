@@ -12,7 +12,6 @@ class AceConfig(object):
     # ----------------------------------------------------
     #
     # Spawn Ace Stream Engine automatically
-    # Need gevent 1.0.0 or higher
     acespawn = False
     # Ace Stream cmd line (use `--log-file filepath` to write log)
     # Autodetect for Windows
@@ -36,6 +35,7 @@ class AceConfig(object):
     # On Windows Ace Engine refreshes acestream.port file only after loading GUI
     # Loading takes about ~10 seconds and we need to wait before taking port out of it
     # Set this to 0 if you don't use proxy at startup or don't need to wait
+    # Only applies to Windows systems
     acestartuptimeout = 10
     # Ace Stream Engine connection timeout
     aceconntimeout = 5
@@ -79,12 +79,22 @@ class AceConfig(object):
     # And run it with:
     # vlc -I telnet --clock-jitter 0 --network-caching 500 --telnet-pass admin
     vlcuse = False
+    # Use AceStream player that comes with engine
+    # If true than proxy will detect a path to ace_player.exe and ace_player.exe will be spawned
+    # It also will not check if vlc.exe is running, it will watch over ace_player.exe process
+    # This option applies only for Windows systems
+    # If set to true, you need to edit vlccmd like this:
+    # ace_player.exe -I telnet --clock-jitter -1 --network-caching -1 --sout-mux-caching 2000 --telnet-password admin
+    # to point ace_player.exe, not vlc.exe!!!
+    vlcuseaceplayer = False
     # Spawn VLC automaticaly
-    # Need gevent 1.0.0 or higher
     vlcspawn = False
     # VLC cmd line (use `--file-logging --logfile=filepath` to write log)
     # Please use the full path to executable for Windows, for example - C:\\Program Files\\VideoLAN\\VLC\\vlc.exe
-    vlccmd = "vlc -I telnet --clock-jitter 0 --network-caching 500 --sout-mux-caching 500 --telnet-password admin --telnet-port 4212"
+    vlccmd = "vlc -I telnet --clock-jitter -1 --network-caching -1 --sout-mux-caching 2000 --telnet-password admin --telnet-port 4212"
+    # VLC spawn timeout
+    # Adjust this if you get error 'Cannot spawn VLC!'
+    vlcspawntimeout = 5
     # VLC host
     vlchost = '127.0.0.1'
     # VLC telnet interface port
