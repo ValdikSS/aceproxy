@@ -550,8 +550,13 @@ def spawnAce(cmd, delay = 0):
         return False
 
 def detectPort():
-    if not isRunning(AceStuff.ace):
-        logger.error("Couldn't detect port! Ace Engine is not running?")
+    try:
+        if not isRunning(AceStuff.ace):
+            logger.error("Couldn't detect port! Ace Engine is not running?")
+            clean_proc()
+            quit(1)
+    except AttributeError:
+        logger.error("Ace Engine is not running!")
         clean_proc()
         quit(1)
     import _winreg
