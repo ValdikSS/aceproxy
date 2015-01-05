@@ -481,7 +481,7 @@ for i in pluginslist:
 # Check whether we can bind to the defined port safely
 if AceConfig.osplatform != 'Windows' and os.getuid() != 0 and AceConfig.httpport <= 1024:
     logger.error("Cannot bind to port " + str(AceConfig.httpport) + " without root privileges")
-    quit(1)
+    sys.exit(1)
 
 server = HTTPServer((AceConfig.httphost, AceConfig.httpport), HTTPHandler)
 logger = logging.getLogger('HTTP')
@@ -492,7 +492,7 @@ if AceConfig.osplatform != 'Windows' and AceConfig.aceproxyuser and os.getuid() 
         logger.info("Dropped privileges to user " + AceConfig.aceproxyuser)
     else:
         logger.error("Cannot drop privileges to user " + AceConfig.aceproxyuser)
-        quit(1)
+        sys.exit(1)
 
 # Creating ClientCounter
 AceStuff.clientcounter = ClientCounter()
@@ -511,7 +511,7 @@ def spawnVLC(cmd, delay = 0):
                 key = _winreg.OpenKey(reg, 'Software\AceStream')
             except:
                 print "Can't find AceStream!"
-                quit(1)
+                sys.exit(1)
             dir = _winreg.QueryValueEx(key, 'InstallDir')
             playerdir = os.path.dirname(dir[0] + '\\player\\')
             cmd[0] = playerdir + '\\' + cmd[0]
@@ -538,7 +538,7 @@ def spawnAce(cmd, delay = 0):
             key = _winreg.OpenKey(reg, 'Software\AceStream')
         except:
             print "Can't find acestream!"
-            quit(1)
+            sys.exit(1)
         engine = _winreg.QueryValueEx(key, 'EnginePath')
         AceStuff.acedir = os.path.dirname(engine[0])
         cmd = engine[0].split()
@@ -554,11 +554,11 @@ def detectPort():
         if not isRunning(AceStuff.ace):
             logger.error("Couldn't detect port! Ace Engine is not running?")
             clean_proc()
-            quit(1)
+            sys.exit(1)
     except AttributeError:
         logger.error("Ace Engine is not running!")
         clean_proc()
-        quit(1)
+        sys.exit(1)
     import _winreg
     import os.path
     reg = _winreg.ConnectRegistry(None, _winreg.HKEY_CURRENT_USER)
@@ -566,7 +566,7 @@ def detectPort():
         key = _winreg.OpenKey(reg, 'Software\AceStream')
     except:
         print "Can't find AceStream!"
-        quit(1)
+        sys.exit(1)
     engine = _winreg.QueryValueEx(key, 'EnginePath')
     AceStuff.acedir = os.path.dirname(engine[0])
     try:
@@ -575,7 +575,7 @@ def detectPort():
     except IOError:
         logger.error("Couldn't detect port! acestream.port file doesn't exist?")
         clean_proc()
-        quit(1)
+        sys.exit(1)
 
 def isRunning(process):
     if psutil.version_info[0] >= 2:
@@ -630,7 +630,7 @@ def shutdown(signum = 0, frame = 0):
             logger.warning("Cannot kill a connection!")
     clean_proc()
     server.server_close()
-    quit()
+    sys.exit()
 
 def _reloadconfig(signum, frame):
     '''
@@ -669,7 +669,7 @@ if AceConfig.vlcuse:
         else:
             logger.error('Cannot find VLC!')
             clean_proc()
-            quit(1)
+            sys.exit(1)
     else:
         AceStuff.vlc = psutil.Process(vlc_pid)
         connectVLC()
@@ -714,7 +714,7 @@ try:
                 else:
                     logger.error("Cannot spawn VLC!")
                     clean_proc()
-                    quit(1)
+                    sys.exit(1)
         if AceConfig.acespawn and not isRunning(AceStuff.ace):
             del AceStuff.ace
             if spawnAce(AceStuff.aceProc, 1):
@@ -726,7 +726,7 @@ try:
             else:
                 logger.error("Cannot spawn Ace Stream!")
                 clean_proc()
-                quit(1)
+                sys.exit(1)
         # Return to our server tasks
         server.handle_request()
 except (KeyboardInterrupt, SystemExit):
