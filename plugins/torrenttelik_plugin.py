@@ -24,7 +24,8 @@ class Torrenttelik(AceProxyPlugin):
 
     def downloadPlaylist(self, url):
         try:
-            Torrenttelik.playlist = urllib2.urlopen(url, timeout=10).read()
+            req = urllib2.Request(url, headers={'User-Agent' : "Magic Browser"})
+            Torrenttelik.playlist = urllib2.urlopen(req, timeout=10).read()
             Torrenttelik.playlist = Torrenttelik.playlist.split('\xef\xbb\xbf')[1]    # garbage at the beginning
         except:
             Torrenttelik.logger.error("Can't download playlist!")
