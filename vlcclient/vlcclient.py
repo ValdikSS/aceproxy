@@ -151,6 +151,12 @@ class VlcClient(object):
     def stopBroadcast(self, stream_name):
         return self._broadcast(False, stream_name)
 
+    def pauseBroadcast(self, stream_name):
+        return self._write(VlcMessage.request.pauseBroadcast(stream_name))
+
+    def playBroadcast(self, stream_name):
+        return self._write(VlcMessage.request.playBroadcast(stream_name))
+
     def _recvData(self):
         # Logger
         logger = logging.getLogger("VlcClient_recvData")

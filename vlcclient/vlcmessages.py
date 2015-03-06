@@ -24,7 +24,7 @@ class VlcMessage(object):
             return 'control "' + stream_name + '" pause'
 
         @staticmethod
-        def unPauseBroadcast(stream_name):
+        def playBroadcast(stream_name):
             return 'control "' + stream_name + '" play'
 
     class response(object):
