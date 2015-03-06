@@ -80,6 +80,7 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         logger.debug("Started")
 
         self.vlcstate = True
+        self.streamstate = True
 
         try:
             while True:
@@ -89,16 +90,16 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
                 if AceConfig.videoobey and AceConfig.vlcuse:
                     # For VLC
-                    try:
-                        # Waiting 0.5 seconds. If timeout, there would be exception.
-                        # Set vlcstate to False in the exception and pause the
-                        # stream
-                        # A bit ugly, huh?
-                        self.ace.getPlayEvent(0.5)
-                        if not self.vlcstate:
-                            AceStuff.vlcclient.unPauseBroadcast(self.vlcid)
-                            self.vlcstate = True
-                    except gevent.Timeout:
+                    # Waiting 0.5 seconds. If timeout exceeded (and the Play event
+                    # flag is not set), pause the stream if AceEngine says so and
+                    # we should obey it.
+                    # A bit ugly, huh?
+                    self.streamstate = self.ace.getPlayEvent(0.5)
+                    if self.streamstate and not self.vlcstate:
+                        AceStuff.vlcclient.playBroadcast(self.vlcid)
+                        self.vlcstate = True
+
+                    if not self.streamstate and self.vlcstate:
                         if self.vlcstate:
                             AceStuff.vlcclient.pauseBroadcast(self.vlcid)
                             self.vlcstate = False
