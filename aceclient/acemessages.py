@@ -39,9 +39,11 @@ class AceMessage(object):
 
     class request(object):
         # Requests (from client to acestream)
-       # API Version
+        # API Version
         HELLO = 'HELLOBG version=' + str(AceConst.APIVERSION)  # Hello
         READY_nokey = 'READY'  # Sent when ready
+        PAUSE = 'EVENT pause'
+        PLAY = 'EVENT play'
         STOP = 'STOP'
         SHUTDOWN = 'SHUTDOWN'
 
@@ -125,6 +127,10 @@ class AceMessage(object):
         def USERDATA(gender, age):
             return 'USERDATA [{"gender": ' + str(gender) + '}, {"age": ' + str(age) + '}]'
 
+        @staticmethod
+        def SEEK(timestamp):
+            return 'LIVESEEK ' + str(timestamp)
+
     class response(object):
         # Responses (from acestream to client)
         HELLO = 'HELLOTS'  # Just the beginning
@@ -134,6 +140,7 @@ class AceMessage(object):
         SHUTDOWN = 'SHUTDOWN'
         AUTH = 'AUTH'
         GETUSERDATA = 'EVENT getuserdata'
+        LIVEPOS = 'EVENT livepos'
         STATE = 'STATE'
         STATUS = 'STATUS'
         PAUSE = 'PAUSE'

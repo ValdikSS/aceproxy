@@ -34,6 +34,12 @@ class AceClient(object):
         self._status = None
         # Current STATE
         self._state = None
+        # Current video position
+        self._position = None
+        # Available video position (loaded data)
+        self._position_last = None
+        # Buffered video pieces
+        self._position_buf = None
         # Current AUTH
         self._auth = None
         self._gender = None
@@ -173,6 +179,12 @@ class AceClient(object):
         self._resumeevent.wait(timeout=timeout)
         return
 
+    def pause(self):
+        self._write(AceMessage.request.PAUSE)
+
+    def play(self):
+        self._write(AceMessage.request.PLAY)
+
     def _recvData(self):
         '''
         Data receiver method for greenlet
@@ -184,6 +196,7 @@ class AceClient(object):
             try:
                 self._recvbuffer = self._socket.read_until("\r\n")
                 self._recvbuffer = self._recvbuffer.strip()
+                #logger.debug(self._recvbuffer)
             except:
                 # If something happened during read, abandon reader.
                 if not self._shuttingDown.isSet():
@@ -260,6 +273,16 @@ class AceClient(object):
 
                 elif self._recvbuffer.startswith(AceMessage.response.GETUSERDATA):
                     raise AceException("You should init me first!")
+
+                elif self._recvbuffer.startswith(AceMessage.response.LIVEPOS):
+                    self._position = self._recvbuffer.split()
+                    self._position_last = self._position[2].split('=')[1]
+                    self._position_buf = self._position[9].split('=')[1]
+                    self._position = self._position[4].split('=')[1]
+                    logger.debug('Current position/last/buf: %s/%s/%s' % (self._position,
+                                                                          self._position_last,
+                                                                          self._position_buf)
+                    )
 
                 elif self._recvbuffer.startswith(AceMessage.response.STATE):
                     self._state = self._recvbuffer.split()[1]
