@@ -176,8 +176,7 @@ class AceClient(object):
         '''
         Blocking while in PAUSE, non-blocking while in RESUME
         '''
-        self._resumeevent.wait(timeout=timeout)
-        return
+        return self._resumeevent.wait(timeout=timeout)
 
     def pause(self):
         self._write(AceMessage.request.PAUSE)
