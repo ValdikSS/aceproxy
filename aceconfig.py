@@ -1,12 +1,14 @@
 '''
 AceProxy configuration script
+Edit this file.
 '''
+
 import logging
-import platform
+import acedefconfig
 from aceclient.acemessages import AceConst
 
 
-class AceConfig(object):
+class AceConfig(acedefconfig.AceDefConfig):
     # ----------------------------------------------------
     # Ace Stream Engine configuration
     # ----------------------------------------------------
@@ -132,7 +134,7 @@ class AceConfig(object):
     # !!!
     # PLEASE set this to 0 if you use VLC
     # !!!
-    videopausedelay = 3
+    videopausedelay = 2
     # Delay before closing Ace Stream connection when client disconnects
     # In seconds.
     videodestroydelay = 3
@@ -151,5 +153,3 @@ class AceConfig(object):
     fakeheaderuas = ('HLS Client/2.0 (compatible; LG NetCast.TV-2012)',
                      'Mozilla/5.0 (DirectFB; Linux armv7l) AppleWebKit/534.26+ (KHTML, like Gecko) Version/5.0 Safari/534.26+ LG Browser/5.00.00(+mouse+3D+SCREEN+TUNER; LGE; 42LM670T-ZA; 04.41.03; 0x00000001;); LG NetCast.TV-2012 0'
                      )
-    # Platform detection, you probably should not touch this
-    osplatform = platform.system()
