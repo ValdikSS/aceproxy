@@ -329,8 +329,10 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     else:
                         self.vlcprefix = ''
 
+                    self.ace.pause()
                     # Sleeping videodelay
                     gevent.sleep(AceConfig.videodelay)
+                    self.ace.play()
 
                     AceStuff.vlcclient.startBroadcast(
                         self.vlcid, self.vlcprefix + self.url, AceConfig.vlcmux, AceConfig.vlcpreaccess)
@@ -370,8 +372,10 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 logger.debug("Headers sent")
 
             if not AceConfig.vlcuse:
+                self.ace.pause()
                 # Sleeping videodelay
                 gevent.sleep(AceConfig.videodelay)
+                self.ace.play()
 
             # Run proxyReadWrite
             self.proxyReadWrite()
