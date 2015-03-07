@@ -46,6 +46,9 @@ class AceDefConfig(object):
     vlcpreaccess = ''
     vlcmux = 'ts'
     vlcforceffmpeg = False
+    astrause = False
+    astrahost = '127.0.0.1'
+    astraport = 8082
     videodelay = 2
     videoobey = True
     videopausedelay = 2

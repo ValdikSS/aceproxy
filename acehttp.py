@@ -262,7 +262,7 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.vlcid = hashlib.md5(self.path_unquoted).hexdigest()
 
         # If we don't use VLC and we're not the first client
-        if clients != 1 and not AceConfig.vlcuse:
+        if clients != 1 and not AceConfig.vlcuse and not AceConfig.astrause:
             AceStuff.clientcounter.delete(self.path_unquoted, self.clientip)
             logger.error(
                 "Not the first client, cannot continue in non-VLC mode")
@@ -348,6 +348,12 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 self.url = 'http://' + AceConfig.vlchost + \
                     ':' + str(AceConfig.vlcoutport) + '/' + self.vlcid
                 logger.debug("VLC url " + self.url)
+
+            if AceConfig.astrause:
+                self.url = 'http://' + AceConfig.astrahost + \
+                    ':' + str(AceConfig.astraport) + '/http/' + \
+                        self.url.replace('http://', '')
+                logger.debug("Astra url " + self.url)
 
             # Sending client headers to videostream
             self.video = urllib2.Request(self.url)

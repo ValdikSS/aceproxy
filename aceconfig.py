@@ -80,6 +80,11 @@ class AceConfig(acedefconfig.AceDefConfig):
     # To use this, you should install VLC first
     # And run it with:
     # vlc -I telnet --clock-jitter 0 --network-caching 500 --telnet-pass admin
+    #
+    # ----------------------------------------------------
+    # VLC configuration
+    # ----------------------------------------------------
+    #
     vlcuse = False
     # Use AceStream player that comes with engine
     # If true than proxy will detect a path to ace_player.exe and ace_player.exe will be spawned
@@ -118,6 +123,18 @@ class AceConfig(acedefconfig.AceDefConfig):
     vlcmux = 'ts'
     # Force ffmpeg INPUT demuxer in VLC. Sometimes can help.
     vlcforceffmpeg = False
+    #
+    # ----------------------------------------------------
+    # Astra configuration
+    # ----------------------------------------------------
+    #
+    # Enable Astra
+    astrause = True
+    # Astra Host
+    astrahost = '127.0.0.1'
+    # Astra Port
+    astraport = 8082
+    #
     # Stream start delay for dumb players (in seconds)
     # !!!
     # PLEASE set this to 0 if you use VLC
