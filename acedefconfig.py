@@ -49,6 +49,7 @@ class AceDefConfig(object):
     videodelay = 2
     videoobey = True
     videopausedelay = 2
+    videoseekback = 0
     videodestroydelay = 3
     videotimeout = 40
     fakeuas = ('Mozilla/5.0 IMC plugin Macintosh', )

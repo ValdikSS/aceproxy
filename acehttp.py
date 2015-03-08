@@ -304,7 +304,8 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             if shouldcreateace:
                 self.ace.aceInit(
                     gender=AceConfig.acesex, age=AceConfig.aceage,
-                    product_key=AceConfig.acekey, pause_delay=AceConfig.videopausedelay)
+                    product_key=AceConfig.acekey, pause_delay=AceConfig.videopausedelay,
+                    seekback=AceConfig.videoseekback)
                 logger.debug("AceClient inited")
                 if self.reqtype == 'pid':
                     contentinfo = self.ace.START(

@@ -73,6 +73,11 @@ class AceConfig(acedefconfig.AceDefConfig):
     loggingtoafile = False
     # Path for logs, default is current directory. For example '/tmp/'
     logpath = ''
+    #
+    # ----------------------------------------------------
+    # VLC configuration
+    # ----------------------------------------------------
+    #
     # Use VideoLAN VLC Media Player
     # I strongly recommend to use VLC, because it lags a lot without it
     # And multiple clients can't watch one stream without it.
@@ -135,6 +140,13 @@ class AceConfig(acedefconfig.AceDefConfig):
     # PLEASE set this to 0 if you use VLC
     # !!!
     videopausedelay = 2
+    # Seek back feature.
+    # Seeks stream back for specified amount of seconds.
+    # Greatly helps fighing AceSteam lags, but introduces
+    # video stream delay.
+    # Set it to 30 or so.
+    # Works only with the newest versions of AceEngine!
+    videoseekback = 0
     # Delay before closing Ace Stream connection when client disconnects
     # In seconds.
     videodestroydelay = 3
