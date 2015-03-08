@@ -51,6 +51,10 @@ class AceClient(object):
         self._urlresult = AsyncResult()
         # Event for resuming from PAUSE
         self._resumeevent = Event()
+        # Seekback seconds.
+        self._seekback = 0
+        # Did we get START command again? For seekback.
+        self._started_again = False
 
         # Logger
         logger = logging.getLogger('AceClient_init')
@@ -102,12 +106,14 @@ class AceClient(object):
         except EOFError as e:
             raise AceException("Write error! " + repr(e))
 
-    def aceInit(self, gender=AceConst.SEX_MALE, age=AceConst.AGE_18_24, product_key=None, pause_delay=0):
+    def aceInit(self, gender=AceConst.SEX_MALE, age=AceConst.AGE_18_24, product_key=None, pause_delay=0, seekback=0):
         self._product_key = product_key
         self._gender = gender
         self._age = age
         # PAUSE/RESUME delay
         self._pausedelay = pause_delay
+        # Seekback seconds
+        self._seekback = seekback
 
         # Logger
         logger = logging.getLogger("AceClient_aceInit")
@@ -195,7 +201,7 @@ class AceClient(object):
             try:
                 self._recvbuffer = self._socket.read_until("\r\n")
                 self._recvbuffer = self._recvbuffer.strip()
-                #logger.debug(self._recvbuffer)
+                #logger.debug('<<< ' + self._recvbuffer)
             except:
                 # If something happened during read, abandon reader.
                 if not self._shuttingDown.isSet():
@@ -245,12 +251,18 @@ class AceClient(object):
 
                 elif self._recvbuffer.startswith(AceMessage.response.START):
                     # START
-                    try:
-                        self._url = self._recvbuffer.split()[1]
-                        self._urlresult.set(self._url)
-                        self._resumeevent.set()
-                    except IndexError as e:
-                        self._url = None
+                    if not self._seekback or (self._seekback and self._started_again):
+                        # If seekback is disabled, we use link in first START command.
+                        # If seekback is enabled, we wait for first START command and
+                        # ignore it, then do seeback in first EVENT position command
+                        # AceStream sends us STOP and START again with new link.
+                        # We use only second link then.
+                        try:
+                            self._url = self._recvbuffer.split()[1]
+                            self._urlresult.set(self._url)
+                            self._resumeevent.set()
+                        except IndexError as e:
+                            self._url = None
 
                 elif self._recvbuffer.startswith(AceMessage.response.STOP):
                     pass
@@ -282,6 +294,11 @@ class AceClient(object):
                                                                           self._position_last,
                                                                           self._position_buf)
                     )
+                    if self._seekback and not self._started_again:
+                        self._write(AceMessage.request.SEEK(str(int(self._position_last) - \
+                            self._seekback)))
+                        logger.debug('Seeking back')
+                        self._started_again = True
 
                 elif self._recvbuffer.startswith(AceMessage.response.STATE):
                     self._state = self._recvbuffer.split()[1]
