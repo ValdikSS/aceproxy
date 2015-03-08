@@ -46,11 +46,11 @@ class Torrenttelik(AceProxyPlugin):
         Torrenttelik.logger.debug(self.params)
         url = None
         list_type = self.getparam('type')
-        if not list_type or list_type == 'ttv':
+        if not list_type or list_type.startswith('ttv'):
             url = config.url_ttv
-        elif list_type == 'ttv_mob':
+        elif list_type.startswith('ttv_mob'):
             url = config.url_ttv_mob
-        elif list_type == 'allfon':
+        elif list_type.startswith('allfon'):
             url = config.url_allfon
 
         if not self.downloadPlaylist(url):
