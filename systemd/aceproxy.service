@@ -3,7 +3,7 @@ Description=AceProxy
 After=network.target
 
 [Service]
-User=valdikss
+User=nobody
 ExecStart=/opt/aceproxy/acehttp.py
 ExecReload=/bin/kill -HUP $MAINPID
 
