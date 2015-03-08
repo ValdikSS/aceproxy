@@ -119,8 +119,6 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         except SocketException:
             # Video connection dropped
             logger.warning("Video connection dropped")
-        except Exception as e:
-            logger.warning("Video connection exception " + repr(e))
         finally:
             self.video.close()
             self.closeConnection()
