@@ -1,0 +1,11 @@
+[Unit]
+Description=AceProxy
+After=network.target
+
+[Service]
+User=valdikss
+ExecStart=/opt/aceproxy/acehttp.py
+ExecReload=/bin/kill -HUP $MAINPID
+
+[Install]
+WantedBy=multi-user.target 
