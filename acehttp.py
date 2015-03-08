@@ -668,7 +668,7 @@ if AceConfig.vlcuse:
     else:
         name = 'vlc'
     vlc_pid = findProcess(name)
-    if not vlc_pid:
+    if AceConfig.vlcspawn and not vlc_pid:
         if AceConfig.vlcspawn:
             AceStuff.vlcProc = AceConfig.vlccmd.split()
             if spawnVLC(AceStuff.vlcProc, AceConfig.vlcspawntimeout) and connectVLC():
