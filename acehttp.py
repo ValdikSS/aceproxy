@@ -642,7 +642,7 @@ def shutdown(signum = 0, frame = 0):
     server.server_close()
     sys.exit()
 
-def _reloadconfig(signum, frame):
+def _reloadconfig(signum=None, frame=None):
     '''
     Reload configuration file.
     SIGHUP handler.
