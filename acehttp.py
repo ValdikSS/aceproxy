@@ -20,6 +20,7 @@ import psutil
 import BaseHTTPServer
 import SocketServer
 from socket import error as SocketException
+from socket import SHUT_RDWR
 import urllib2
 import hashlib
 import aceclient
@@ -59,6 +60,7 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             try:
                 self.wfile.close()
                 self.rfile.close()
+                self.connection.shutdown(SHUT_RDWR)
             except:
                 pass
 
