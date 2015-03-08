@@ -635,7 +635,7 @@ def shutdown(signum = 0, frame = 0):
         try:
             # Set errorhappened to prevent waiting for videodestroydelay
             connection.errorhappened = True
-            connection.hanggreenlet.kill()
+            connectin.closeConnection()
         except:
             logger.warning("Cannot kill a connection!")
     clean_proc()
