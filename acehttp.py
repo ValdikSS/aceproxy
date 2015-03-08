@@ -611,7 +611,7 @@ def findProcess(name):
 def clean_proc():
     # Trying to close all spawned processes gracefully
     if AceConfig.vlcspawn and isRunning(AceStuff.vlc):
-        AceStuff.vlc.terminate()
+        AceStuff.vlcclient.destroy()
         gevent.sleep(1)
         if isRunning(AceStuff.vlc):
             # or not :)
