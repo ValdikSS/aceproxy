@@ -3,7 +3,7 @@ __author__ = 'miltador'
 Torrent-telik.com Playlist Downloader Plugin
 (based on ytv plugin by ValdikSS)
 http://ip:port/torrent-telik || http://ip:port/torrent-telik/?type=ttv = torrent-tv playlist
-http://ip:port/torrent-telik/?type=ttv_mob = torrent-tv mobile playlist
+http://ip:port/torrent-telik/?type=mob_ttv = torrent-tv mobile playlist
 http://ip:port/torrent-telik/?type=allfon = allfon playlist
 '''
 import json
@@ -43,13 +43,13 @@ class Torrenttelik(AceProxyPlugin):
 
         query = urlparse.urlparse(connection.path).query
         self.params = urlparse.parse_qs(query)
-        Torrenttelik.logger.debug(self.params)
+
         url = None
         list_type = self.getparam('type')
         if not list_type or list_type.startswith('ttv'):
             url = config.url_ttv
-        elif list_type.startswith('ttv_mob'):
-            url = config.url_ttv_mob
+        elif list_type.startswith('mob_ttv'):
+            url = config.url_mob_ttv
         elif list_type.startswith('allfon'):
             url = config.url_allfon
 
