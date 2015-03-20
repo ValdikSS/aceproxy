@@ -1,4 +1,4 @@
-'''
+"""
 P2pProxy response simulator
 Uses torrent-tv API for it's work
 
@@ -6,24 +6,23 @@ What is this plugin for?
  It repeats the behavior of p2pproxy to support programs written for using p2pproxy
 
  Some of examples for what you can use this plugin:
-    Comfort TV widget (++ version)
+    Comfort TV++ widget
     Official TorrentTV widget for Smart TV
-    Kodi (XBMC) p2pproxy pvr plugin
+    Kodi p2pproxy pvr plugin
     etc...
 
 !!! It requires some changes in aceconfig.py:
     set the httpport to 8081
     set the vlcoutport to some other port (8082 for example)
-'''
+"""
 __author__ = 'miltador'
 
 import logging
 import re
 import urllib2
 import urlparse
+from torrenttv_api import TorrentTvApi
 from datetime import date
-import time
-from xml.dom.minidom import parseString
 
 from modules.PluginInterface import AceProxyPlugin
 from modules.PlaylistGenerator import PlaylistGenerator
@@ -35,54 +34,26 @@ class P2pproxy(AceProxyPlugin):
 
     logger = logging.getLogger('plugin_p2pproxy')
 
-    session = None
-
-    xml = None
-    translationslist = None
-
-    recordslist = None
-    channelslist = None
-
-    categories = dict()
-
-    sessionupdatetime = None
-
     def __init__(self, AceConfig, AceStuff):
         super(P2pproxy, self).__init__(AceConfig, AceStuff)
-
-    def sessionTimedUpdater(self):
-        self.auth()
-        P2pproxy.sessionupdatetime = int(time.time())
-
-    def downloadPlaylist(self, trans_type, raw_only=False):
-        # First of all, authorization and getting session
-        if not P2pproxy.session:  # we need to auth only once
-            if not self.auth():
-                return False
-
-        # Now we get translations and categories lists
-        if not self.getTranslations(trans_type, raw_only):
-            return False
-        return True
+        self.params = None
 
     def handle(self, connection):
         P2pproxy.logger.debug('Handling request')
-        # 60 min session cache
-        if not P2pproxy.sessionupdatetime or int(time.time()) - P2pproxy.sessionupdatetime > 60 * 60:
-            self.sessionTimedUpdater()
 
         hostport = connection.headers['Host']
 
         query = urlparse.urlparse(connection.path).query
         self.params = urlparse.parse_qs(query)
 
-        if connection.reqtype == 'channels':
-            if len(connection.splittedpath) == 3 and connection.splittedpath[2].split('?')[0] == 'play':
-                record_id = self.getparam('id')
-                if not record_id:
+        if connection.reqtype == 'channels':  # /channels/ branch
+            if len(connection.splittedpath) == 3 and connection.splittedpath[2].split('?')[
+                0] == 'play':  # /channels/play?id=[id]
+                channel_id = self.get_param('id')
+                if not channel_id:
                     # /channels/play?id=&_=[epoch timestamp] is Torrent-TV widget proxy check
                     # P2pProxy simply closes connection on this request sending Server header, so do we
-                    if self.getparam('_') is not None:
+                    if self.get_param('_'):
                         P2pproxy.logger.debug('Status check')
                         connection.send_response(200)
                         connection.send_header('Access-Control-Allow-Origin', '*')
@@ -96,117 +67,134 @@ class P2pproxy(AceProxyPlugin):
                         return
 
                 stream_url = None
-                stream_type, stream = self.getSource(record_id)
+
+                session = TorrentTvApi.auth(config.email, config.password)
+                stream_type, stream = TorrentTvApi.stream_source(session, channel_id)
+
                 if stream_type == 'torrent':
-                    stream_url = re.sub('^(http.+)$', lambda match: '/torrent/' + \
-                                                                    urllib2.quote(match.group(0), '') + '/stream.mp4',
+                    stream_url = re.sub('^(http.+)$',
+                                        lambda match: '/torrent/' + urllib2.quote(match.group(0), '') + '/stream.mp4',
                                         stream)
                 elif stream_type == 'contentid':
-                    stream_url = re.sub('^([0-9a-f]{40})', lambda match: '/pid/' + \
-                                                                         urllib2.quote(match.group(0), '') + '/stream.mp4',
+                    stream_url = re.sub('^([0-9a-f]{40})',
+                                        lambda match: '/pid/' + urllib2.quote(match.group(0), '') + '/stream.mp4',
                                         stream)
                 connection.path = stream_url
                 connection.splittedpath = stream_url.split('/')
                 connection.reqtype = connection.splittedpath[1].lower()
                 connection.handleRequest(False)
-            elif self.getparam('type') == 'm3u':
+            elif self.get_param('type') == 'm3u':  # /channels/?filter=[filter]&group=[group]&type=m3u
                 connection.send_response(200)
                 connection.send_header('Content-Type', 'application/x-mpegurl')
                 connection.end_headers()
 
-                param_group = self.getparam('group')
-                param_filter = self.getparam('filter')
-                if param_filter is not None:
-                    self.downloadPlaylist(param_filter)
-                else:
-                    self.downloadPlaylist('all')
+                param_group = self.get_param('group')
+                param_filter = self.get_param('filter')
+                if not param_filter:
+                    param_filter = 'all'  # default filter
+
+                session = TorrentTvApi.auth(config.email, config.password)
+                translations_list = TorrentTvApi.translations(session, param_filter)
+
                 playlistgen = PlaylistGenerator()
                 P2pproxy.logger.debug('Generating requested m3u playlist')
-                for channel in P2pproxy.translationslist:
-                    groupid = channel.getAttribute('group')
-                    if param_group is not None and param_group != 'all' and param_group != groupid:
+                for channel in translations_list:
+                    group_id = channel.getAttribute('group')
+
+                    if param_group and param_group != 'all' and param_group != group_id:  # filter channels by group
                         continue
+
                     name = channel.getAttribute('name')
-                    group = P2pproxy.categories[groupid]
-
+                    group = TorrentTvApi.CATEGORIES[int(group_id)].decode('utf-8')
                     cid = channel.getAttribute('id')
-
                     logo = channel.getAttribute('logo')
                     if config.fullpathlogo:
                         logo = 'http://torrent-tv.ru/uploads/' + logo
+
                     playlistgen.addItem({'name': name, 'url': cid, 'group': group, 'logo': logo})
 
                 P2pproxy.logger.debug('Exporting')
                 exported = playlistgen.exportm3u(hostport)
                 exported = exported.encode('utf-8')
                 connection.wfile.write(exported)
-            else:
-                param_filter = self.getparam('filter')
-                if param_filter is not None:
-                    self.downloadPlaylist(param_filter, True)
-                else:
-                    self.downloadPlaylist('all', True)
+            else:  # /channels/?filter=[filter]
+                param_filter = self.get_param('filter')
+                if not param_filter:
+                    param_filter = 'all'  # default filter
+
+                session = TorrentTvApi.auth(config.email, config.password)
+                translations_list = TorrentTvApi.translations(session, param_filter, True)
+
                 P2pproxy.logger.debug('Exporting')
 
                 connection.send_response(200)
                 connection.send_header('Access-Control-Allow-Origin', '*')
                 connection.send_header('Connection', 'close')
-                connection.send_header('Content-Length', str(len(P2pproxy.xml)))
+                connection.send_header('Content-Length', str(len(translations_list)))
                 connection.send_header('Content-Type', 'text/xml;charset=utf-8')
                 connection.end_headers()
-                connection.wfile.write(P2pproxy.xml)
+                connection.wfile.write(translations_list)
         elif connection.reqtype == 'xbmc.pvr':  # same as /channels request
             if len(connection.splittedpath) == 3 and connection.splittedpath[2] == 'playlist':
-                self.downloadPlaylist('all', True)
+                session = TorrentTvApi.auth(config.email, config.password)
+                translations_list = TorrentTvApi.translations(session, 'all', True)
+
                 P2pproxy.logger.debug('Exporting')
 
                 connection.send_response(200)
                 connection.send_header('Access-Control-Allow-Origin', '*')
                 connection.send_header('Connection', 'close')
-                connection.send_header('Content-Length', str(len(P2pproxy.xml)))
+                connection.send_header('Content-Length', str(len(translations_list)))
                 connection.send_header('Content-Type', 'text/xml;charset=utf-8')
                 connection.end_headers()
-                connection.wfile.write(P2pproxy.xml)
-        elif connection.reqtype == 'archive':
-            if len(connection.splittedpath) == 3 and connection.splittedpath[2] == 'channels':
-                self.getChannels()
+                connection.wfile.write(translations_list)
+        elif connection.reqtype == 'archive':  # /archive/ branch
+            if len(connection.splittedpath) == 3 and connection.splittedpath[2] == 'channels':  # /archive/channels
+
+                session = TorrentTvApi.auth(config.email, config.password)
+                archive_channels = TorrentTvApi.archive_channels(session, True)
+
                 P2pproxy.logger.debug('Exporting')
 
                 connection.send_response(200)
                 connection.send_header('Access-Control-Allow-Origin', '*')
                 connection.send_header('Connection', 'close')
-                connection.send_header('Content-Length', str(len(P2pproxy.xml)))
+                connection.send_header('Content-Length', str(len(archive_channels)))
                 connection.send_header('Content-Type', 'text/xml;charset=utf-8')
                 connection.end_headers()
-                connection.wfile.write(P2pproxy.xml)
-            if len(connection.splittedpath) == 3 and connection.splittedpath[2].split('?')[0] == 'play':
-                record_id = self.getparam('id')
+                connection.wfile.write(archive_channels)
+            if len(connection.splittedpath) == 3 and connection.splittedpath[2].split('?')[
+                0] == 'play':  # /archive/play?id=[record_id]
+                record_id = self.get_param('id')
                 if not record_id:
                     connection.dieWithError()  # Bad request
                     return
 
                 stream_url = None
-                stream_type, stream = self.getStreamSource(record_id)
+
+                session = TorrentTvApi.auth(config.email, config.password)
+                stream_type, stream = TorrentTvApi.archive_stream_source(session, record_id)
+
                 if stream_type == 'torrent':
-                    stream_url = re.sub('^(http.+)$', lambda match: '/torrent/' + \
-                                                                    urllib2.quote(match.group(0), '') + '/stream.mp4',
+                    stream_url = re.sub('^(http.+)$',
+                                        lambda match: '/torrent/' + urllib2.quote(match.group(0), '') + '/stream.mp4',
                                         stream)
                 elif stream_type == 'contentid':
-                    stream_url = re.sub('^([0-9a-f]{40})', lambda match: '/pid/' + \
-                                                                         urllib2.quote(match.group(0), '') + '/stream.mp4',
+                    stream_url = re.sub('^([0-9a-f]{40})',
+                                        lambda match: '/pid/' + urllib2.quote(match.group(0), '') + '/stream.mp4',
                                         stream)
                 connection.path = stream_url
                 connection.splittedpath = stream_url.split('/')
                 connection.reqtype = connection.splittedpath[1].lower()
                 connection.handleRequest(False)
-            elif self.getparam('type') == 'm3u':
+            elif self.get_param('type') == 'm3u':  # /archive/?type=m3u&date=[param_date]&channel_id=[param_channel]
                 connection.send_response(200)
                 connection.send_header('Content-Type', 'application/x-mpegurl')
                 connection.end_headers()
 
-                param_date = self.getparam('date')
+                param_date = self.get_param('date')
                 if not param_date:
-                    d = date.today()
+                    d = date.today()  # consider default date as today if not given
                 else:
                     try:
                         param_date = param_date.split('-')
@@ -215,22 +203,25 @@ class P2pproxy(AceProxyPlugin):
                         P2pproxy.logger.error('date param is not correct!')
                         connection.dieWithError()
                         return
-                param_channel = self.getparam('channel_id')
-                if not param_channel:
-                    param_channel = 'all'
+                param_channel = self.get_param('channel_id')
+                if param_channel == '' or not param_channel:
+                    P2pproxy.logger.error('Got /archive/ request but no channel_id specified!')
+                    connection.dieWithError()
+                    return
 
-                self.getRecords(param_channel, d.strftime('%d-%m-%Y'))
-                self.getChannels()
+                session = TorrentTvApi.auth(config.email, config.password)
+                records_list = TorrentTvApi.records(session, param_channel, d.strftime('%d-%m-%Y'))
+                channels_list = TorrentTvApi.archive_channels(session)
 
                 playlistgen = PlaylistGenerator()
                 P2pproxy.logger.debug('Generating archive m3u playlist')
-                for record in P2pproxy.recordslist:
+                for record in records_list:
                     record_id = record.getAttribute('record_id')
                     name = record.getAttribute('name')
                     channel_id = record.getAttribute('channel_id')
                     channel_name = ''
                     logo = ''
-                    for channel in P2pproxy.channelslist:
+                    for channel in channels_list:
                         if channel.getAttribute('channel_id') == channel_id:
                             channel_name = channel.getAttribute('name')
                             logo = channel.getAttribute('logo')
@@ -246,8 +237,8 @@ class P2pproxy(AceProxyPlugin):
                 exported = playlistgen.exportm3u(hostport, empty_header=True, archive=True)
                 exported = exported.encode('utf-8')
                 connection.wfile.write(exported)
-            else:
-                param_date = self.getparam('date')
+            else:  # /archive/?date=[param_date]&channel_id=[param_channel]
+                param_date = self.get_param('date')
                 if not param_date:
                     d = date.today()
                 else:
@@ -258,180 +249,27 @@ class P2pproxy(AceProxyPlugin):
                         P2pproxy.logger.error('date param is not correct!')
                         connection.dieWithError()
                         return
-                param_channel = self.getparam('channel_id')
-                if not param_channel:
-                    param_channel = 'all'
-                self.getRecords(param_channel, d.strftime('%d-%m-%Y'), True)
+                param_channel = self.get_param('channel_id')
+                if param_channel == '' or not param_channel:
+                    P2pproxy.logger.error('Got /archive/ request but no channel_id specified!')
+                    connection.dieWithError()
+                    return
+
+                session = TorrentTvApi.auth(config.email, config.password)
+                records_list = TorrentTvApi.records(session, param_channel, d.strftime('%d-%m-%Y'), True)
+
                 P2pproxy.logger.debug('Exporting')
 
                 connection.send_response(200)
                 connection.send_header('Access-Control-Allow-Origin', '*')
                 connection.send_header('Connection', 'close')
-                connection.send_header('Content-Length', str(len(P2pproxy.xml)))
+                connection.send_header('Content-Length', str(len(records_list)))
                 connection.send_header('Content-Type', 'text/xml;charset=utf-8')
                 connection.end_headers()
-                connection.wfile.write(P2pproxy.xml)
+                connection.wfile.write(records_list)
 
-    def getparam(self, key):
+    def get_param(self, key):
         if key in self.params:
             return self.params[key][0]
         else:
             return None
-
-# ============================================ [ API ] ============================================
-
-    '''
-    Every API request returns if it is successfull and if no, gives a reason
-    '''
-
-    def checkRequestSuccess(self, res):
-        success = res.getElementsByTagName('success')[0].childNodes[0].data
-        if success == 0 or not success:
-            error = res.getElementsByTagName('error')[0].childNodes[0].data
-            P2pproxy.logger.error('Failed to perform the torrent-tv API request, reason: ' +
-                                  error)
-            if error == 'incorrect':  # trying to fix
-                P2pproxy.logger.debug('Got response error, maybe time to update session')
-                self.sessionupdatetime = None
-                return False
-        return True
-
-    '''
-    Refreshes current session
-    '''
-
-    def auth(self):
-        try:
-            P2pproxy.logger.debug('Trying to auth on torrent-tv')
-            xmlresult = urllib2.urlopen(
-                'http://api.torrent-tv.ru/v2_auth.php?username=' + config.email + '&password=' + config.password +
-                '&application=tsproxy&typeresult=xml', timeout=10).read()
-        except:
-            P2pproxy.logger.error("Can't auth! Maybe torrent-tv is down")
-            return False
-
-        res = parseString(xmlresult).documentElement
-        if self.checkRequestSuccess(res):
-            P2pproxy.session = res.getElementsByTagName('session')[0].childNodes[0].data
-            return True
-        else:
-            return False
-
-    '''
-    Gets list of available translations
-    '''
-
-    def getTranslations(self, trans_type, raw_only):
-        try:
-            P2pproxy.logger.debug('Trying to get the playlist from torrent-tv')
-            P2pproxy.xml = urllib2.urlopen(
-                'http://api.torrent-tv.ru/v2_alltranslation.php?session=' + P2pproxy.session +
-                '&type=' + trans_type + '&typeresult=xml', timeout=10).read()
-        except:
-            P2pproxy.logger.error("Can't get translations! Maybe torrent-tv is down")
-            return False
-
-        res = parseString(P2pproxy.xml).documentElement
-        if not raw_only:
-            if self.checkRequestSuccess(res):
-                P2pproxy.translationslist = res.getElementsByTagName('channel')
-                categorieslist = res.getElementsByTagName('category')
-                for cat in categorieslist:
-                    gid = cat.getAttribute('id')
-                    name = cat.getAttribute('name')
-                    P2pproxy.categories[gid] = name
-                return True
-            else:
-                return False
-        return True
-
-    '''
-    Gets list of available records of channel_id by date
-    '''
-
-    def getRecords(self, channel_id, date, raw_only=False):
-        try:
-            P2pproxy.logger.debug('Trying to get the records list from torrent-tv')
-            P2pproxy.xml = urllib2.urlopen(
-                'http://api.torrent-tv.ru/v2_arc_getrecords.php?session=' + P2pproxy.session +
-                '&channel_id=' + channel_id + '&date=' + date + '&typeresult=xml', timeout=10).read()
-        except:
-            P2pproxy.logger.error("Can't get records! Maybe torrent-tv is down")
-            return False
-
-        res = parseString(P2pproxy.xml).documentElement
-        if not raw_only:
-            if self.checkRequestSuccess(res):
-                P2pproxy.recordslist = res.getElementsByTagName('channel')
-                return True
-            else:
-                return False
-        return True
-
-    '''
-    Gets the channels list for archive
-    '''
-
-    def getChannels(self):
-        try:
-            P2pproxy.logger.debug('Trying to get the channels list from torrent-tv')
-            P2pproxy.xml = urllib2.urlopen(
-                'http://api.torrent-tv.ru/v2_arc_getchannels.php?session=' + P2pproxy.session +
-                '&typeresult=xml', timeout=10).read()
-        except:
-            P2pproxy.logger.error("Can't get channels list! Maybe torrent-tv is down")
-            return False
-
-        res = parseString(P2pproxy.xml).documentElement
-        if self.checkRequestSuccess(res):
-            P2pproxy.channelslist = res.getElementsByTagName('channel')
-            return True
-        else:
-            return False
-
-    '''
-    Gets the source for Ace Stream by channel id
-    Returns type of source and source value
-    '''
-
-    def getSource(self, channelId):
-        if not P2pproxy.session:
-            if not self.auth():
-                return None, None
-        P2pproxy.logger.debug('Getting source for channel id: ' + channelId)
-        try:
-            xmlresult = urllib2.urlopen(
-                'http://api.torrent-tv.ru/v2_get_stream.php?session=' + P2pproxy.session +
-                '&channel_id=' + channelId + '&typeresult=xml', timeout=10).read()
-        except:
-            P2pproxy.logger.error("Can't get channel source! Maybe torrent-tv is down")
-            return None, None
-        res = parseString(xmlresult).documentElement
-        if self.checkRequestSuccess(res):
-            return res.getElementsByTagName('type')[0].childNodes[0].data.encode('utf-8'), \
-                   res.getElementsByTagName('source')[0].childNodes[0].data.encode('utf-8')
-        else:
-            return None, None
-
-    '''
-    Gets stream source for archive record
-    '''
-    def getStreamSource(self, record_id):
-        if not P2pproxy.session:
-            if not self.auth():
-                return None, None
-        P2pproxy.logger.debug('Getting stream for record id: ' + record_id)
-        try:
-            xmlresult = urllib2.urlopen(
-                'http://api.torrent-tv.ru/v2_arc_getstream.php?session=' + P2pproxy.session +
-                '&record_id=' + record_id + '&typeresult=xml', timeout=10).read()
-        except:
-            P2pproxy.logger.error("Can't get stream source! Maybe torrent-tv is down")
-            return None, None
-        res = parseString(xmlresult).documentElement
-        if self.checkRequestSuccess(res):
-            return res.getElementsByTagName('type')[0].childNodes[0].data.encode('utf-8'), \
-                   res.getElementsByTagName('source')[0].childNodes[0].data.encode('utf-8')
-        else:
-            return None, None
-# =================================================================================================
