@@ -668,19 +668,22 @@ if AceConfig.vlcuse:
             name = 'vlc.exe'
     else:
         name = 'vlc'
-    vlc_pid = findProcess(name)
-    if AceConfig.vlcspawn and not vlc_pid:
-        if AceConfig.vlcspawn:
-            AceStuff.vlcProc = AceConfig.vlccmd.split()
-            if spawnVLC(AceStuff.vlcProc, AceConfig.vlcspawntimeout) and connectVLC():
-                logger.info("VLC spawned with pid " + str(AceStuff.vlc.pid))
+    if AceConfig.vlcspawn:
+        AceStuff.vlcProc = AceConfig.vlccmd.split()
+        if spawnVLC(AceStuff.vlcProc, AceConfig.vlcspawntimeout) and connectVLC():
+            logger.info("VLC spawned with pid " + str(AceStuff.vlc.pid))
         else:
-            logger.error('Cannot find VLC!')
+            logger.error('Cannot spawn or connect to VLC!')
             clean_proc()
             sys.exit(1)
     else:
-        AceStuff.vlc = psutil.Process(vlc_pid)
-        connectVLC()
+        if connectVLC():
+            vlc_pid = findProcess(name)
+            AceStuff.vlc = psutil.Process(vlc_pid)
+        else:
+            logger.error('Cannot connect to VLC!')
+            clean_proc()
+            sys.exit(1)
 
 if AceConfig.osplatform == 'Windows':
     name = 'ace_engine.exe'
