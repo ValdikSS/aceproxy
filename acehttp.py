@@ -196,6 +196,7 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 AceStuff.pluginshandlers.get(self.reqtype).handle(self)
             except Exception as e:
                 logger.error('Plugin exception: ' + repr(e))
+                logger.error(traceback.format_exc())
                 self.dieWithError()
             finally:
                 self.closeConnection()
