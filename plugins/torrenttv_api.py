@@ -6,6 +6,7 @@ Forms requests to API, checks result for errors and returns in desired form (lis
 __author__ = 'miltador'
 
 import urllib2
+import socket
 import xml.dom.minidom as dom
 
 
@@ -168,5 +169,5 @@ class TorrentTvApi(object):
         try:
             result = urllib2.urlopen('http://api.torrent-tv.ru/' + request + '&typeresult=xml', timeout=10).read()
             return result
-        except urllib2.URLError as e:
+        except (urllib2.URLError, socket.timeout) as e:
             raise TorrentTvApiException('Error happened while trying to access API: ' + repr(e))
