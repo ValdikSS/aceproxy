@@ -1,6 +1,6 @@
 '''
 Allfon.tv Playlist Downloader Plugin
-http://ip:port/ttvplaylist
+http://ip:port/allfon
 '''
 import re
 import logging
