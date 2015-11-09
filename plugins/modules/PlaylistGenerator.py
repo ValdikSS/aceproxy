@@ -38,18 +38,22 @@ class PlaylistGenerator(object):
             item.get('group', ''), item.get('tvg', ''), item.get('logo', ''),
             item.get('name'), item.get('url'))
 
-    def exportm3u(self, hostport, add_ts=False, empty_header=False, archive=False):
+    def exportm3u(self, hostport, add_ts=False, empty_header=False, archive=False, header=None):
         '''
         Exports m3u playlist
         '''
-        if not empty_header:
-            itemlist = PlaylistGenerator.m3uheader
+        
+        if header is None:
+            if not empty_header:
+                itemlist = PlaylistGenerator.m3uheader
+            else:
+                itemlist = PlaylistGenerator.m3uemptyheader
+                if add_ts:
+                    # Adding ts:// after http:// for some players
+                    hostport = 'ts://' + hostport
         else:
-            itemlist = PlaylistGenerator.m3uemptyheader
-        if add_ts:
-                # Adding ts:// after http:// for some players
-                hostport = 'ts://' + hostport
-
+            itemlist = header
+        
         for item in self.itemlist:
             item['tvg'] = item.get('tvg', '') if item.get('tvg') else \
                 item.get('name').replace(' ', '_')
