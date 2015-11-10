@@ -111,10 +111,13 @@ class P2pproxy(AceProxyPlugin):
                     if config.fullpathlogo:
                         logo = 'http://torrent-tv.ru/uploads/' + logo
 
-                    playlistgen.addItem({'name': name, 'url': cid, 'group': group, 'logo': logo})
+                    fields = {'name': name, 'id': cid, 'url': cid, 'group': group, 'logo': logo}
+                    fields['tvgid'] = config.tvgid %fields
+                    playlistgen.addItem(fields)
 
                 P2pproxy.logger.debug('Exporting')
-                exported = playlistgen.exportm3u(hostport)
+                header = '#EXTM3U url-tvg="%s" tvg-shift=%d\n' %(config.tvgurl, config.tvgshift)
+                exported = playlistgen.exportm3u(hostport=hostport, header=header)
                 exported = exported.encode('utf-8')
                 connection.wfile.write(exported)
             else:  # /channels/?filter=[filter]
