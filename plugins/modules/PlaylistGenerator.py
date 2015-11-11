@@ -12,7 +12,7 @@ class PlaylistGenerator(object):
         '#EXTM3U url-tvg="http://www.teleguide.info/download/new3/jtv.zip"\n'
     m3uemptyheader = '#EXTM3U\n'
     m3uchanneltemplate = \
-        '#EXTINF:-1 group-title="%s" tvg-name="%s" tvg-logo="%s",%s\n%s\n'
+        '#EXTINF:-1 group-title="%s" tvg-name="%s" tvg-id="%s" tvg-logo="%s",%s\n%s\n'
 
     def __init__(self):
         self.itemlist = list()
@@ -23,7 +23,8 @@ class PlaylistGenerator(object):
         itemdict is a dictionary with the following fields:
             name - item name
             url - item URL
-            tvg - item JTV name (optional)
+            tvg - item tvg name (optional)
+            tvgid - item tvg id (optional)
             group - item playlist group (optional)
             logo - item logo file name (optional)
         '''
@@ -35,8 +36,8 @@ class PlaylistGenerator(object):
         Generates EXTINF line with url
         '''
         return PlaylistGenerator.m3uchanneltemplate % (
-            item.get('group', ''), item.get('tvg', ''), item.get('logo', ''),
-            item.get('name'), item.get('url'))
+            item.get('group', ''), item.get('tvg', ''), item.get('tvgid', ''),
+            item.get('logo', ''), item.get('name'), item.get('url'))
 
     def exportm3u(self, hostport, add_ts=False, empty_header=False, archive=False, header=None):
         '''
