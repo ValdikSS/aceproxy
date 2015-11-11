@@ -71,7 +71,12 @@ class Torrenttv(AceProxyPlugin):
 
         playlistgen = PlaylistGenerator()
         for match in matches:
-            playlistgen.addItem(match.groupdict())
+            itemdict = match.groupdict()
+            name = itemdict.get('name').decode('UTF-8')
+            logo = config.logomap.get(name)
+            if logo is not None:
+                 itemdict['logo'] = logo
+            playlistgen.addItem(itemdict)
 
         header = '#EXTM3U url-tvg="%s" tvg-shift=%d\n' %(config.tvgurl, config.tvgshift)
         connection.wfile.write(playlistgen.exportm3u(hostport, add_ts=add_ts, header=header))
